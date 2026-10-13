@@ -5,11 +5,166 @@
   <meta name="description" content="Lombana Therapy: conoce nuestras terapias, consulta información y agenda tus citas en línea.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registro - Lombana Therapy</title>
+  <link rel="icon" type="image/png" href="assets/img/lombana-therapy-logo.png">
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- ESTILOS DEL MENÚ Y HAMBURGUESA RESPONSIVE -->
+  <style>
+    @media (min-width: 993px) {
+      .header .nav {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+      }
+
+      .header .nav > a,
+      .header .nav .dropdown-btn,
+      .header .nav .btn-logout {
+        font-size: 1.2rem !important;
+        font-weight: 600;
+      }
+    }
+
+    .hamburger-btn {
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 30px;
+      height: 22px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      z-index: 10002;
+    }
+
+    .hamburger-btn .bar {
+      width: 100%;
+      height: 3px;
+      background-color: currentColor;
+      border-radius: 3px;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .menu-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9998;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    @media (max-width: 992px) {
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 10000;
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100%;
+      }
+
+      .header .logo h1 {
+        margin: 0;
+        font-size: 1.4rem;
+      }
+
+      .hamburger-btn {
+        display: flex;
+        margin-left: auto;
+      }
+
+      .hamburger-btn.active .bar:nth-child(1) {
+        transform: translateY(9.5px) rotate(45deg);
+      }
+
+      .hamburger-btn.active .bar:nth-child(2) {
+        opacity: 0;
+      }
+
+      .hamburger-btn.active .bar:nth-child(3) {
+        transform: translateY(-9.5px) rotate(-45deg);
+      }
+
+      .header .nav {
+        position: fixed !important;
+        top: 0;
+        right: -100%;
+        width: 280px;
+        max-width: 82%;
+        height: 100vh;
+        background-color: #ffffff;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        padding: 5rem 1.5rem 2rem !important;
+        gap: 0.5rem !important;
+        box-shadow: -5px 0 20px rgba(0, 0, 0, 0.15);
+        transition: right 0.35s ease-in-out;
+        z-index: 10001;
+        overflow-y: auto;
+      }
+
+      .header .nav.active {
+        right: 0;
+      }
+
+      .menu-overlay.active {
+        display: block;
+        opacity: 1;
+      }
+
+      .header .nav > a,
+      .header .nav .dropdown,
+      .header .nav .dropdown-btn,
+      .header .nav .btn-logout {
+        width: 100%;
+        text-align: left;
+      }
+
+      .header .nav > a,
+      .header .nav .dropdown-btn {
+        display: block;
+        padding: 0.75rem 0.5rem;
+        color: #222222 !important;
+        border-bottom: 1px solid #eeeeee;
+        font-size: 1.1rem;
+        text-decoration: none;
+      }
+
+      .header .nav .dropdown-content {
+        position: static !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        padding-left: 1rem;
+        background: #f9f9f9;
+        border-radius: 6px;
+      }
+
+      .header .nav .dropdown-content a {
+        color: #444444 !important;
+        padding: 0.6rem 0.5rem;
+        display: block;
+      }
+
+      .header .nav .btn-logout {
+        margin-top: 0.75rem;
+        text-align: center;
+      }
+
+      .header .nav .oculto {
+        display: none !important;
+      }
+    }
+  </style>
 </head>
 <body>
 
- <!-- ENCABEZADO UNIFICADO PARA TODOS LOS MÓDULOS -->
+  <!-- ENCABEZADO UNIFICADO PARA TODOS LOS MÓDULOS -->
   <header class="header">
     <a href="index.html" class="logo">
       <h1>Lombana Therapy</h1>
@@ -22,13 +177,14 @@
       id="hamburger-btn"
       aria-label="Abrir menú"
       aria-expanded="false"
+      aria-controls="nav-menu"
     >
       <span class="bar"></span>
       <span class="bar"></span>
       <span class="bar"></span>
     </button>
 
-    <nav class="nav" id="nav-menu">
+    <nav class="nav" id="nav-menu" aria-label="Navegación principal">
       <a href="index.html">Inicio</a>
 
       <a
@@ -69,16 +225,16 @@
   <!-- FONDO OSCURO MÓVIL -->
   <div class="menu-overlay" id="menu-overlay"></div>
 
-  <main>
+  <main id="contenido-principal">
     <section class="form-section">
       <form class="form-card" onsubmit="registrarUsuario(event)">
         <h2>Crear cuenta</h2>
 
         <label for="nombre">Nombre completo</label>
-        <input type="text" id="nombre" required>
+        <input type="text" id="nombre" name="nombre" autocomplete="name" minlength="2" maxlength="100" required>
 
         <label for="telefono">Teléfono</label>
-        <input type="text" id="telefono">
+        <input type="tel" id="telefono" name="telefono" autocomplete="tel" maxlength="20">
         <label for="genero">Género</label>
         <select id="genero" required>
           <option value="">Selecciona una opción</option>
@@ -87,10 +243,10 @@
           <option value="otro">Otro</option>
         </select>
         <label for="email">Correo electrónico</label>
-        <input type="email" id="email" required>
+        <input type="email" id="email" name="email" autocomplete="email" required>
 
         <label for="password">Contraseña</label>
-        <input type="password" id="password" required>
+        <input type="password" id="password" name="password" autocomplete="new-password" minlength="8" required>
 
         <button type="submit" class="btn-primary">Registrarme</button>
 
@@ -102,8 +258,15 @@
     </section>
   </main>
 
-<script src="js/vendor/supabase.bundle.js"></script>
+  <!-- JavaScript principal y navegación responsive -->
+  <script src="js/main.js"></script>
+
+  <!-- Supabase: librería, configuración pública y cliente (en este orden) -->
+  <script src="js/vendor/supabase.bundle.js"></script>
+  <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
+
+  <!-- Función registrarUsuario(event) -->
   <script src="js/auth.js"></script>
 </body>
 </html>

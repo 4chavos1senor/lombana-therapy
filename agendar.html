@@ -1,14 +1,42 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Lombana Therapy: conoce nuestras terapias, consulta información y agenda tus citas en línea.">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Agenda tu terapia en Lombana Therapy. Consulta las terapias y horarios disponibles y reserva tu cita en línea."
+  >
+
+  <meta name="author" content="Lombana Therapy">
+
   <title>Agendar terapia - Lombana Therapy</title>
+
+  <!-- FAVICON -->
+  <link
+    rel="icon"
+    type="image/png"
+    href="assets/img/lombana-therapy-logo.png"
+  >
+
+  <!-- ESTILOS PRINCIPALES -->
   <link rel="stylesheet" href="css/styles.css">
 
-  <!-- ESTILOS DEL MENÚ Y HAMBURGUESA RESPONSIVE -->
+  <!-- ESTILOS DEL MENÚ RESPONSIVE -->
   <style>
+
+    [hidden],
+    .header .nav .oculto {
+      display: none !important;
+    }
+
+    /* MENÚ EN COMPUTADORA */
     @media (min-width: 993px) {
       .header .nav {
         display: flex;
@@ -24,6 +52,7 @@
       }
     }
 
+    /* BOTÓN HAMBURGUESA */
     .hamburger-btn {
       display: none;
       flex-direction: column;
@@ -35,6 +64,7 @@
       cursor: pointer;
       padding: 0;
       z-index: 10002;
+      color: #6b4f3f;
     }
 
     .hamburger-btn .bar {
@@ -45,6 +75,7 @@
       transition: all 0.3s ease-in-out;
     }
 
+    /* FONDO OSCURO */
     .menu-overlay {
       display: none;
       position: fixed;
@@ -55,7 +86,9 @@
       transition: opacity 0.3s ease;
     }
 
+    /* DISEÑO PARA MÓVIL Y TABLET */
     @media (max-width: 992px) {
+
       .header {
         position: sticky;
         top: 0;
@@ -77,6 +110,7 @@
         margin-left: auto;
       }
 
+      /* ANIMACIÓN HAMBURGUESA */
       .hamburger-btn.active .bar:nth-child(1) {
         transform: translateY(9.5px) rotate(45deg);
       }
@@ -89,6 +123,7 @@
         transform: translateY(-9.5px) rotate(-45deg);
       }
 
+      /* MENÚ LATERAL */
       .header .nav {
         position: fixed !important;
         top: 0;
@@ -96,13 +131,14 @@
         width: 280px;
         max-width: 82%;
         height: 100vh;
+        height: 100dvh;
         background-color: #ffffff;
         flex-direction: column !important;
         align-items: flex-start !important;
         justify-content: flex-start !important;
         padding: 5rem 1.5rem 2rem !important;
         gap: 0.5rem !important;
-        box-shadow: -5px 0 20px rgba(0, 0, 0, 0.15);
+        box-shadow: -5px 0 20px rgba(0,0,0,0.15);
         transition: right 0.35s ease-in-out;
         z-index: 10001;
         overflow-y: auto;
@@ -117,6 +153,7 @@
         opacity: 1;
       }
 
+      /* ENLACES DEL MENÚ */
       .header .nav > a,
       .header .nav .dropdown,
       .header .nav .dropdown-btn,
@@ -135,6 +172,7 @@
         text-decoration: none;
       }
 
+      /* SUBMENÚ DE TERAPIAS */
       .header .nav .dropdown-content {
         position: static !important;
         box-shadow: none !important;
@@ -155,16 +193,18 @@
         text-align: center;
       }
 
-      .header .nav .oculto {
-        display: none !important;
-      }
     }
   </style>
 </head>
+
 <body>
 
-  <!-- ENCABEZADO UNIFICADO PARA TODOS LOS MÓDULOS -->
+  <!-- ==================================
+       ENCABEZADO PRINCIPAL
+  ================================== -->
+
   <header class="header">
+
     <a href="index.html" class="logo">
       <h1>Lombana Therapy</h1>
     </a>
@@ -176,15 +216,25 @@
       id="hamburger-btn"
       aria-label="Abrir menú"
       aria-expanded="false"
+      aria-controls="nav-menu"
     >
       <span class="bar"></span>
       <span class="bar"></span>
       <span class="bar"></span>
     </button>
 
-    <nav class="nav" id="nav-menu">
-      <a href="index.html">Inicio</a>
+    <!-- MENÚ PRINCIPAL -->
+    <nav
+      class="nav"
+      id="nav-menu"
+      aria-label="Navegación principal"
+    >
 
+      <a href="index.html">
+        Inicio
+      </a>
+
+      <!-- MIS CITAS -->
       <a
         href="mis-citas.html"
         id="btn-mis-citas"
@@ -193,22 +243,51 @@
         Citas
       </a>
 
+      <!-- MENÚ DE TERAPIAS -->
       <div class="dropdown">
-        <a href="terapias.html" class="dropdown-btn">Terapias</a>
 
-        <div class="dropdown-content" id="menu-terapias">
-          <a href="terapias.html">Cargando terapias...</a>
+        <a
+          href="terapias.html"
+          class="dropdown-btn"
+        >
+          Terapias
+        </a>
+
+        <div
+          class="dropdown-content"
+          id="menu-terapias"
+        >
+          <a href="terapias.html">
+            Cargando terapias...
+          </a>
         </div>
+
       </div>
 
-      <a href="agendar.html">Agendar terapia</a>
-      <a href="index.html#contacto">Contacto</a>
-      <a href="index.html#ubicacion">Ubicación</a>
+      <a
+        href="agendar.html"
+        aria-current="page"
+      >
+        Agendar terapia
+      </a>
 
-      <a href="login.html" class="solo-invitado">
+      <a href="index.html#contacto">
+        Contacto
+      </a>
+
+      <a href="index.html#ubicacion">
+        Ubicación
+      </a>
+
+      <!-- INICIAR SESIÓN -->
+      <a
+        href="login.html"
+        class="solo-invitado"
+      >
         Login
       </a>
 
+      <!-- CERRAR SESIÓN -->
       <button
         type="button"
         onclick="cerrarSesion()"
@@ -217,99 +296,268 @@
       >
         Cerrar sesión
       </button>
+
     </nav>
   </header>
 
-  <!-- FONDO OSCURO MÓVIL -->
-  <div class="menu-overlay" id="menu-overlay"></div>
+  <!-- FONDO OSCURO PARA MENÚ MÓVIL -->
+  <div
+    class="menu-overlay"
+    id="menu-overlay"
+    aria-hidden="true"
+  ></div>
 
-  <main>
-    <section class="form-section">
+  <!-- ==================================
+       CONTENIDO PRINCIPAL
+  ================================== -->
+
+  <main id="contenido-principal">
+
+    <section
+      class="form-section"
+      aria-labelledby="titulo-agendar"
+    >
+
       <div class="form-card">
-        <h2>Agenda tu terapia</h2>
 
+        <h2 id="titulo-agendar">
+          Agenda tu terapia
+        </h2>
+
+        <!-- HORARIOS DE ATENCIÓN -->
         <p class="info-text">
-          Horario de atención: lunes a viernes de 9:00 a 18:00 hrs y sábado de 9:00 a 15:00 hrs.
+          Horario de atención: lunes a viernes
+          de 9:00 a 18:00 hrs y sábado
+          de 9:00 a 15:00 hrs.
         </p>
 
+        <!-- INFORMACIÓN DE LA SESIÓN -->
         <p class="info-text">
-          Duración: 1 hora | Precio por sesión: $400 MXN
+          Duración: 1 hora |
+          Precio por sesión: $400 MXN
         </p>
 
-        <label for="terapia">Selecciona una terapia</label>
-        <select id="terapia" required>
-          <option value="">Cargando terapias...</option>
+        <!-- SELECCIONAR TERAPIA -->
+        <label for="terapia">
+          Selecciona una terapia
+        </label>
+
+        <select
+          id="terapia"
+          name="terapia"
+          required
+        >
+          <option value="">
+            Cargando terapias...
+          </option>
         </select>
 
-        <label for="fecha">Selecciona una fecha</label>
-        <input type="date" id="fecha" onchange="cargarHorariosDisponibles()" required>
+        <!-- SELECCIONAR FECHA -->
+        <label for="fecha">
+          Selecciona una fecha
+        </label>
 
-        <h3>Horarios disponibles</h3>
+        <input
+          type="date"
+          id="fecha"
+          name="fecha"
+          onchange="cargarHorariosDisponibles()"
+          required
+        >
 
-        <div id="horarios" class="slots-container">
-          <p>Selecciona una fecha para ver horarios.</p>
+        <!-- HORARIOS DISPONIBLES -->
+        <h3 id="titulo-horarios">
+          Horarios disponibles
+        </h3>
+
+        <div
+          id="horarios"
+          class="slots-container"
+          aria-labelledby="titulo-horarios"
+          aria-live="polite"
+        >
+          <p>
+            Selecciona una fecha para ver horarios.
+          </p>
         </div>
 
-        <button type="button" class="btn-primary" onclick="confirmarCita()">
+        <!-- CONFIRMAR CITA -->
+        <button
+          type="button"
+          class="btn-primary"
+          onclick="confirmarCita()"
+        >
           Confirmar cita
         </button>
+
       </div>
+
     </section>
+
   </main>
 
-  <!-- SCRIPTS DE TU PROYECTO -->
+  <!-- ==================================
+       JAVASCRIPT DEL PROYECTO
+  ================================== -->
+
+  <!-- FUNCIONALIDAD PRINCIPAL -->
   <script src="js/main.js"></script>
-<script src="js/vendor/supabase.bundle.js"></script>
+
+  <!-- LIBRERÍA LOCAL DE SUPABASE -->
+  <script src="js/vendor/supabase.bundle.js"></script>
+
+  <!-- CONFIGURACIÓN GENERADA DESDE .env -->
+  <script src="js/config.js"></script>
+
+  <!-- CONEXIÓN A SUPABASE -->
   <script src="js/supabase.js"></script>
+
+  <!-- AUTENTICACIÓN -->
   <script src="js/auth.js"></script>
+
+  <!-- TERAPIAS -->
   <script src="js/terapias.js"></script>
+
+  <!-- AGENDAMIENTO DE CITAS -->
   <script src="js/agenda.js"></script>
 
-  <!-- SCRIPT DEL MENÚ HAMBURGUESA (Integrado y sin conflictos) -->
+  <!-- ==================================
+       MENÚ HAMBURGUESA RESPONSIVE
+  ================================== -->
+
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const header = document.querySelector('.header');
-      const hamburgerBtn = document.getElementById('hamburger-btn');
-      const navMenu = document.getElementById('nav-menu');
-      const menuOverlay = document.getElementById('menu-overlay');
+    document.addEventListener("DOMContentLoaded", () => {
 
-      if (!header || !hamburgerBtn || !navMenu || !menuOverlay) return;
-      if (header.dataset.menuInitialized === 'true') return;
-      header.dataset.menuInitialized = 'true';
+      const header =
+        document.querySelector(".header");
 
-      function toggleMenu(e) {
-        e.stopPropagation();
-        const isActive = navMenu.classList.contains('active');
-        hamburgerBtn.classList.toggle('active', !isActive);
-        navMenu.classList.toggle('active', !isActive);
-        menuOverlay.classList.toggle('active', !isActive);
-        hamburgerBtn.setAttribute('aria-expanded', String(!isActive));
-        document.body.style.overflow = !isActive ? 'hidden' : '';
+      const hamburgerBtn =
+        document.getElementById("hamburger-btn");
+
+      const navMenu =
+        document.getElementById("nav-menu");
+
+      const menuOverlay =
+        document.getElementById("menu-overlay");
+
+      if (
+        !header ||
+        !hamburgerBtn ||
+        !navMenu ||
+        !menuOverlay
+      ) {
+        return;
       }
 
+      // EVITAR INICIALIZACIÓN DUPLICADA
+      if (header.dataset.menuInitialized === "true") {
+        return;
+      }
+
+      header.dataset.menuInitialized = "true";
+
+      // ABRIR Y CERRAR MENÚ
+      function toggleMenu(event) {
+
+        event.stopPropagation();
+
+        const isActive =
+          navMenu.classList.contains("active");
+
+        hamburgerBtn.classList.toggle(
+          "active",
+          !isActive
+        );
+
+        navMenu.classList.toggle(
+          "active",
+          !isActive
+        );
+
+        menuOverlay.classList.toggle(
+          "active",
+          !isActive
+        );
+
+        hamburgerBtn.setAttribute(
+          "aria-expanded",
+          String(!isActive)
+        );
+
+        hamburgerBtn.setAttribute(
+          "aria-label",
+          !isActive ? "Cerrar menú" : "Abrir menú"
+        );
+
+        document.body.style.overflow =
+          !isActive ? "hidden" : "";
+      }
+
+      // CERRAR MENÚ
       function closeMenu() {
-        hamburgerBtn.classList.remove('active');
-        navMenu.classList.remove('active');
-        menuOverlay.classList.remove('active');
-        hamburgerBtn.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
+
+        hamburgerBtn.classList.remove("active");
+        navMenu.classList.remove("active");
+        menuOverlay.classList.remove("active");
+
+        hamburgerBtn.setAttribute(
+          "aria-expanded",
+          "false"
+        );
+
+        hamburgerBtn.setAttribute(
+          "aria-label",
+          "Abrir menú"
+        );
+
+        document.body.style.overflow = "";
       }
 
-      hamburgerBtn.addEventListener('click', toggleMenu);
-      menuOverlay.addEventListener('click', closeMenu);
+      // BOTÓN HAMBURGUESA
+      hamburgerBtn.addEventListener(
+        "click",
+        toggleMenu
+      );
 
-      navMenu.addEventListener('click', (e) => {
-        if (e.target.closest('a, button')) {
+      // CERRAR AL TOCAR EL FONDO
+      menuOverlay.addEventListener(
+        "click",
+        closeMenu
+      );
+
+      // CERRAR AL SELECCIONAR UNA OPCIÓN
+      navMenu.addEventListener("click", (event) => {
+
+        if (event.target.closest("a, button")) {
           closeMenu();
         }
+
       });
 
-      window.addEventListener('resize', () => {
+      // CERRAR AL CAMBIAR EL TAMAÑO
+      window.addEventListener("resize", () => {
+
         if (window.innerWidth > 992) {
           closeMenu();
         }
+
       });
+
+      // CERRAR CON ESCAPE
+      document.addEventListener("keydown", (event) => {
+
+        if (
+          event.key === "Escape" &&
+          navMenu.classList.contains("active")
+        ) {
+          closeMenu();
+          hamburgerBtn.focus();
+        }
+
+      });
+
     });
   </script>
+
 </body>
 </html>
