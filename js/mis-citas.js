@@ -34,9 +34,7 @@ async function cargarMisCitas() {
     .order('hora_inicio', { ascending: true });
 
   if (error) {
-    contenedor.innerHTML = `
-      <p>Error al cargar citas: ${error.message}</p>
-    `;
+    contenedor.textContent = 'No se pudieron cargar las citas. Intenta nuevamente.';
     return;
   }
 
@@ -55,42 +53,36 @@ async function cargarMisCitas() {
     const estado = normalizarTexto(cita.status || '');
     const estaCancelada = estado === 'cancelada';
 
-    tarjeta.innerHTML = `
-      <h3>${nombreTerapia}</h3>
-
-      <p>
-        <strong>Fecha:</strong> ${cita.fecha}
-      </p>
-
-      <p>
-        <strong>Hora:</strong> ${formatearHora(cita.hora_inicio)}
-      </p>
-
-      <p>
-        <strong>Estado:</strong> 
-        <span class="${estaCancelada ? 'status-cancelada' : 'status-confirmada'}">
-          ${estaCancelada ? 'Cancelada' : 'Confirmada'}
-        </span>
-      </p>
-
-      ${
-        estaCancelada
-          ? `
-            <p>
-              <strong>Esta cita fue cancelada.</strong>
-            </p>
-          `
-          : `
-            <button
-              type="button"
-              class="btn-danger"
-              onclick="cancelarMiCita('${cita.id}')"
-            >
-              Cancelar cita
-            </button>
-          `
-      }
-    `;
+    const titulo = document.createElement('h3');
+    titulo.textContent = nombreTerapia;
+    const detalle = (etiqueta, valor) => {
+      const parrafo = document.createElement('p');
+      const negrita = document.createElement('strong');
+      negrita.textContent = etiqueta + ': ';
+      parrafo.append(negrita, document.createTextNode(valor));
+      return parrafo;
+    };
+    const estadoTexto = document.createElement('p');
+    const estadoEtiqueta = document.createElement('strong');
+    estadoEtiqueta.textContent = 'Estado: ';
+    const estadoSpan = document.createElement('span');
+    estadoSpan.className = estaCancelada ? 'status-cancelada' : 'status-confirmada';
+    estadoSpan.textContent = estaCancelada ? 'Cancelada' : 'Confirmada';
+    estadoTexto.append(estadoEtiqueta, estadoSpan);
+    tarjeta.append(titulo, detalle('Fecha', cita.fecha || ''),
+      detalle('Hora', formatearHora(cita.hora_inicio)), estadoTexto);
+    if (estaCancelada) {
+      const aviso = document.createElement('p');
+      aviso.textContent = 'Esta cita fue cancelada.';
+      tarjeta.appendChild(aviso);
+    } else {
+      const boton = document.createElement('button');
+      boton.type = 'button';
+      boton.className = 'btn-danger';
+      boton.textContent = 'Cancelar cita';
+      boton.addEventListener('click', () => cancelarMiCita(cita.id));
+      tarjeta.appendChild(boton);
+    }
 
     contenedor.appendChild(tarjeta);
   });

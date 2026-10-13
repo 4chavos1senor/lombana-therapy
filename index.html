@@ -1,34 +1,41 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="description" content="Lombana Therapy: conoce nuestras terapias, consulta información y agenda tus citas en línea.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Lombana Therapy´s</title>
+  <title>Lombana Therapy</title>
 
   <link rel="stylesheet" href="css/styles.css">
 
   <!-- ESTILOS DEL MENÚ Y HAMBURGUESA RESPONSIVE -->
   <style>
-    /* =========================================
-       TAMAÑO DEL TEXTO DEL MENÚ EN PC
-       ========================================= */
+    /* VISIBILIDAD DE BOTONES POR SESIÓN */
+    [hidden],
+    .header .nav [hidden],
+    .header .nav .oculto {
+      display: none !important;
+    }
+
+    /* TAMAÑO DEL TEXTO DEL MENÚ EN PC */
     @media (min-width: 993px) {
       .header .nav {
         display: flex;
         align-items: center;
-        gap: 1.5rem; /* Espacio entre cada módulo */
+        gap: 1.5rem;
       }
 
       .header .nav > a,
       .header .nav .dropdown-btn,
       .header .nav .btn-logout {
-        font-size: 1.2rem !important; /* Aumenta o disminuye este valor si lo quieres aún más grande (ej. 1.3rem) */
+        font-size: 1.2rem !important;
         font-weight: 600;
       }
     }
 
-    /* Botón hamburguesa (oculto en computadora) */
+    /* BOTÓN HAMBURGUESA */
     .hamburger-btn {
       display: none;
       flex-direction: column;
@@ -50,7 +57,7 @@
       transition: all 0.3s ease-in-out;
     }
 
-    /* Fondo oscuro al abrir el menú en móvil */
+    /* FONDO OSCURO DEL MENÚ MÓVIL */
     .menu-overlay {
       display: none;
       position: fixed;
@@ -61,17 +68,15 @@
       transition: opacity 0.3s ease;
     }
 
-    /* =========================================
-       DISEÑO RESPONSIVE (Móviles y Tablets)
-       ========================================= */
+    /* DISEÑO RESPONSIVE */
     @media (max-width: 992px) {
       .header {
         position: sticky;
         top: 0;
         z-index: 10000;
         display: flex !important;
-        flex-direction: row !important; /* Mantiene el logo y la hamburguesa en la misma fila */
-        justify-content: space-between !important; /* Logo a la izquierda y hamburguesa a su derecha */
+        flex-direction: row !important;
+        justify-content: space-between !important;
         align-items: center !important;
         width: 100%;
       }
@@ -83,10 +88,10 @@
 
       .hamburger-btn {
         display: flex;
-        margin-left: auto; /* Empuja el botón hamburguesa a la derecha del logo */
+        margin-left: auto;
       }
 
-      /* Animación del botón a una "X" */
+      /* ANIMACIÓN HAMBURGUESA */
       .hamburger-btn.active .bar:nth-child(1) {
         transform: translateY(9.5px) rotate(45deg);
       }
@@ -99,7 +104,7 @@
         transform: translateY(-9.5px) rotate(-45deg);
       }
 
-      /* Panel desplegable del menú (sale desde la derecha) */
+      /* PANEL DESPLEGABLE */
       .header .nav {
         position: fixed !important;
         top: 0;
@@ -119,7 +124,6 @@
         overflow-y: auto;
       }
 
-      /* Mostrar menú cuando está activo */
       .header .nav.active {
         right: 0;
       }
@@ -129,7 +133,7 @@
         opacity: 1;
       }
 
-      /* Enlaces y elementos dentro del menú móvil */
+      /* ELEMENTOS DEL MENÚ MÓVIL */
       .header .nav > a,
       .header .nav .dropdown,
       .header .nav .dropdown-btn,
@@ -148,7 +152,7 @@
         text-decoration: none;
       }
 
-      /* Submenú de terapias adaptado a móvil */
+      /* SUBMENÚ DE TERAPIAS */
       .header .nav .dropdown-content {
         position: static !important;
         box-shadow: none !important;
@@ -168,11 +172,6 @@
         margin-top: 0.75rem;
         text-align: center;
       }
-
-      /* Respeta tu clase .oculto de auth.js */
-      .header .nav .oculto {
-        display: none !important;
-      }
     }
   </style>
 </head>
@@ -185,7 +184,7 @@
       <h1>Lombana Therapy</h1>
     </a>
 
-    <!-- BOTÓN HAMBURGUESA (A la derecha del logo en móvil/tablet) -->
+    <!-- BOTÓN HAMBURGUESA -->
     <button
       type="button"
       class="hamburger-btn"
@@ -198,47 +197,65 @@
       <span class="bar"></span>
     </button>
 
+    <!-- MENÚ DE NAVEGACIÓN -->
     <nav class="nav" id="nav-menu">
+
       <a href="index.html">Inicio</a>
 
+      <!-- SOLO USUARIOS CON SESIÓN -->
       <a
         href="mis-citas.html"
         id="btn-mis-citas"
         class="solo-sesion oculto"
+        hidden
       >
         Citas
       </a>
 
+      <!-- TERAPIAS -->
       <div class="dropdown">
-        <a href="terapias.html" class="dropdown-btn">Terapias</a>
+        <a href="terapias.html" class="dropdown-btn">
+          Terapias
+        </a>
 
         <div class="dropdown-content" id="menu-terapias">
-          <a href="terapias.html">Cargando terapias...</a>
+          <a href="terapias.html">
+            Cargando terapias...
+          </a>
         </div>
       </div>
 
       <a href="agendar.html">Agendar terapia</a>
+
       <a href="#contacto">Contacto</a>
+
       <a href="#ubicacion">Ubicación</a>
 
-      <a href="login.html" class="solo-invitado">
+      <!-- SOLO USUARIOS SIN SESIÓN -->
+      <a
+        href="login.html"
+        id="btn-login"
+        class="solo-invitado"
+      >
         Login
       </a>
 
+      <!-- SOLO USUARIOS CON SESIÓN -->
       <button
         type="button"
-        onclick="cerrarSesion()"
-        class="btn-logout solo-sesion oculto"
         id="btn-logout"
+        class="btn-logout solo-sesion oculto"
+        onclick="cerrarSesion()"
+        hidden
       >
         Cerrar sesión
       </button>
+
     </nav>
   </header>
 
-  <!-- FONDO OSCURO PARA CERRAR MENÚ EN MÓVIL -->
+  <!-- FONDO OSCURO DEL MENÚ -->
   <div class="menu-overlay" id="menu-overlay"></div>
-
 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
@@ -246,7 +263,10 @@
     <!-- BIENVENIDA -->
     <section class="hero">
       <div class="hero-content">
-        <h2>Bienestar, equilibrio y terapia corporal personalizada</h2>
+
+        <h2>
+          Bienestar, equilibrio y terapia corporal personalizada
+        </h2>
 
         <p>
           En Lombana Therapy te ayudamos a mejorar tu bienestar físico
@@ -256,6 +276,7 @@
         <a href="agendar.html" class="btn-primary">
           Agendar terapia
         </a>
+
       </div>
 
       <div class="hero-logo-box">
@@ -267,7 +288,6 @@
       </div>
     </section>
 
-
     <!-- TERAPIAS DINÁMICAS -->
     <section class="section">
       <h2>Nuestras terapias</h2>
@@ -276,7 +296,6 @@
         <p>Cargando terapias...</p>
       </div>
     </section>
-
 
     <!-- CONTACTO -->
     <section id="contacto" class="section contact-section">
@@ -288,6 +307,7 @@
       </h3>
 
       <div class="contact-buttons">
+
         <a
           class="contact-btn whatsapp-btn"
           href="https://wa.me/525611676062?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20una%20terapia"
@@ -305,9 +325,9 @@
         >
           Facebook
         </a>
+
       </div>
     </section>
-
 
     <!-- UBICACIÓN -->
     <section id="ubicacion" class="section">
@@ -328,11 +348,11 @@
           width="100%"
           height="350"
           style="border:0;"
-          allowfullscreen=""
+          allowfullscreen
           loading="lazy"
           referrerpolicy="no-referrer-when-downgrade"
-          title="Ubicación de Lombana Therapy">
-        </iframe>
+          title="Ubicación de Lombana Therapy"
+        ></iframe>
       </div>
 
       <a
@@ -343,27 +363,88 @@
       >
         Abrir ubicación en Google Maps
       </a>
+
     </section>
 
   </main>
-
 
   <!-- PIE DE PÁGINA -->
   <footer class="footer">
     <p>Lombana Therapy © 2026</p>
   </footer>
 
-
-  <!-- SCRIPTS -->
+  <!-- LIBRERÍAS Y ARCHIVOS JAVASCRIPT -->
   <script src="js/main.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script src="js/supabase.js"></script>
+
   <script src="js/auth.js"></script>
+
   <script src="js/terapias.js"></script>
+
+  <!-- CONTROL DE SESIÓN DEL MENÚ -->
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+
+      const btnLogin = document.getElementById('btn-login');
+      const btnLogout = document.getElementById('btn-logout');
+      const btnCitas = document.getElementById('btn-mis-citas');
+
+      // MOSTRAR U OCULTAR ELEMENTOS
+      function configurarVisibilidad(elemento, mostrar) {
+        if (!elemento) return;
+
+        elemento.hidden = !mostrar;
+        elemento.classList.toggle('oculto', !mostrar);
+      }
+
+      // ACTUALIZAR MENÚ SEGÚN LA SESIÓN
+      function actualizarMenu(session) {
+        const sesionActiva = Boolean(session && session.user);
+
+        // Login solo aparece sin sesión
+        configurarVisibilidad(btnLogin, !sesionActiva);
+
+        // Cerrar sesión solo aparece con sesión
+        configurarVisibilidad(btnLogout, sesionActiva);
+
+        // Citas solo aparece con sesión
+        configurarVisibilidad(btnCitas, sesionActiva);
+      }
+
+      // COMPROBAR SESIÓN AL CARGAR LA PÁGINA
+      try {
+        const { data, error } =
+          await supabaseClient.auth.getSession();
+
+        if (error) {
+          console.error('Error al consultar la sesión:', error);
+          actualizarMenu(null);
+        } else {
+          actualizarMenu(data.session);
+        }
+
+      } catch (error) {
+        console.error('No se pudo comprobar la sesión:', error);
+        actualizarMenu(null);
+      }
+
+      // DETECTAR CAMBIOS DE AUTENTICACIÓN
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        actualizarMenu(session);
+      });
+
+    });
+  </script>
+
   <!-- REDIRECCIÓN DEL ADMINISTRADOR -->
   <script>
     async function mostrarOpcionesAdmin() {
-      const { data, error } = await supabaseClient.auth.getSession();
+
+      const { data, error } =
+        await supabaseClient.auth.getSession();
 
       if (error) {
         console.error('Error al consultar la sesión:', error);
@@ -374,11 +455,12 @@
         return;
       }
 
-      const { data: perfil, error: perfilError } = await supabaseClient
-        .from('profiles')
-        .select('rol')
-        .eq('id', data.session.user.id)
-        .single();
+      const { data: perfil, error: perfilError } =
+        await supabaseClient
+          .from('profiles')
+          .select('rol')
+          .eq('id', data.session.user.id)
+          .single();
 
       if (perfilError) {
         console.error('Error al consultar el perfil:', perfilError);

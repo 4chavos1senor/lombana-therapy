@@ -1,3 +1,9 @@
+function destinoLocalSeguro(valor) {
+  if (!valor || !/^[a-z0-9-]+\.html(?:\?[a-z0-9=&%_-]*)?$/i.test(valor)) return null;
+  const permitido = ['index.html', 'agendar.html', 'mis-citas.html', 'terapias.html', 'terapia-detalle.html'];
+  return permitido.includes(valor.split('?')[0]) ? valor : null;
+}
+
 async function registrarUsuario(event) {
   event.preventDefault();
 
@@ -7,6 +13,14 @@ async function registrarUsuario(event) {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
 
+  if (nombre.length < 2 || nombre.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) {
+    alert('Revisa el nombre, correo y contraseña (mínimo 8 caracteres).');
+    return;
+  }
+  if (telefono && !/^[0-9+()\-\s]{7,20}$/.test(telefono)) {
+    alert('El teléfono no tiene un formato válido.');
+    return;
+  }
   const { data, error } = await supabaseClient.auth.signUp({
     email: email,
     password: password,
@@ -28,7 +42,7 @@ async function registrarUsuario(event) {
   }
 
   if (data.user) {
-  await supabaseClient
+  const { error: perfilError } = await supabaseClient
     .from('profiles')
     .upsert({
       id: data.user.id,
@@ -38,11 +52,15 @@ async function registrarUsuario(event) {
       genero: genero,
       rol: 'paciente'
     });
+    if (perfilError) {
+      alert('Cuenta registrada, pero el perfil no pudo guardarse. Contacta al administrador.');
+      return;
+    }
   }
 
  alert('Cuenta creada exitosamente, favor de iniciar sesion.');
 const params = new URLSearchParams(window.location.search);
-const redirect = params.get('redirect');
+const redirect = destinoLocalSeguro(params.get('redirect'));
 
 window.location.href = redirect
   ? 'login.html?redirect=' + encodeURIComponent(redirect)
@@ -86,7 +104,7 @@ async function iniciarSesion(event) {
   }
 
   const params = new URLSearchParams(window.location.search);
-  const redirect = params.get('redirect');
+  const redirect = destinoLocalSeguro(params.get('redirect'));
 
   if (redirect) {
     window.location.href = redirect;
