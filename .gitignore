@@ -1,14 +1,163 @@
-# Archivos privados / configuraciones locales
+
+# ==========================================
+# LOMBANA THERAPY
+# ARCHIVO: .gitignore
+# UNIDAD 3 - CONFIGURACIÓN DE SERVICIOS WEB
+# ==========================================
+
+
+# ==========================================
+# 1. VARIABLES DE ENTORNO
+# ==========================================
+
+# No publicar configuraciones privadas
 .env
 .env.*
 !.env.example
-!.env*.example
+
+# Copias locales de configuración
+*.env.local
+*.env.backup
+*.env.bak
+
+
+# ==========================================
+# 2. DEPENDENCIAS
+# ==========================================
+
+# Dependencias de Node.js
 node_modules/
-*.log
+
+# Dependencias de otros gestores
+bower_components/
+
+
+# ==========================================
+# 3. ARCHIVOS DE COMPILACIÓN
+# ==========================================
+
+dist/
+build/
+coverage/
+.cache/
+.parcel-cache/
+.vite/
+
+
+# ==========================================
+# 4. REGISTROS Y LOGS
+# ==========================================
+
 logs/
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# ==========================================
+# 5. BASES DE DATOS LOCALES
+# ==========================================
+
 *.sqlite
+*.sqlite3
 *.db
+*.db-journal
+
+
+# ==========================================
+# 6. ARCHIVOS TEMPORALES
+# ==========================================
+
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.orig
+*~
+
+
+# ==========================================
+# 7. SISTEMAS OPERATIVOS
+# ==========================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+.directory
+.Trash-*/
+
+
+# ==========================================
+# 8. EDITORES DE CÓDIGO
+# ==========================================
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains
+.idea/
+
+# Vim
+*.swn
+
+
+# ==========================================
+# 9. ARCHIVOS PRIVADOS
+# ==========================================
+
+# Certificados y claves privadas
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Credenciales locales
+credentials.json
+secrets.json
+service-account.json
+
+
+# ==========================================
+# 10. ARCHIVOS DE RESPALDO
+# ==========================================
+
+backups/
+respaldos/
+
+*.backup
+
+
+# ==========================================
+# 11. ARCHIVOS QUE SÍ DEBEN PUBLICARSE
+# ==========================================
+
+# Plantilla de variables
+!.env.example
+
+# Documentación
+!README.md
+!AUDITORIA.md
+
+# Dependencias con versiones fijas
+!package.json
+!package-lock.json
+
+# Configuración y políticas de Supabase
+# Los archivos SQL versionados pueden
+# incluir esquemas y políticas, nunca secretos.
+
+# ==========================================
+# FIN DEL ARCHIVO
+# ==========================================
