@@ -1,0 +1,30 @@
+{
+  "name": "lombana-therapy",
+  "version": "1.0.0",
+  "description": "Sitio de terapias con catálogo, registro, inicio de sesión y agendamiento de citas.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lombana97/lombana-therapy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Lombana97/lombana-therapy/issues"
+  },
+  "homepage": "https://github.com/Lombana97/lombana-therapy#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.3"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
