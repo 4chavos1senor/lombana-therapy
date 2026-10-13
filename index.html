@@ -1,26 +1,45 @@
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="description" content="Lombana Therapy: conoce nuestras terapias, consulta información y agenda tus citas en línea.">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Lombana Therapy: conoce nuestras terapias, consulta información y agenda tus citas en línea."
+  >
 
   <title>Lombana Therapy</title>
 
+  <!-- FAVICON: CORRECCIÓN DEL ERROR 404 -->
+  <link
+    rel="icon"
+    type="image/png"
+    href="assets/img/lombana-therapy-logo.png"
+  >
+
+  <!-- CSS PRINCIPAL -->
   <link rel="stylesheet" href="css/styles.css">
 
-  <!-- ESTILOS DEL MENÚ Y HAMBURGUESA RESPONSIVE -->
+  <!-- ESTILOS DEL MENÚ RESPONSIVE -->
   <style>
-    /* VISIBILIDAD DE BOTONES POR SESIÓN */
+
+    /* OCULTAR ELEMENTOS POR SESIÓN */
     [hidden],
     .header .nav [hidden],
     .header .nav .oculto {
       display: none !important;
     }
 
-    /* TAMAÑO DEL TEXTO DEL MENÚ EN PC */
+    /* MENÚ EN COMPUTADORA */
     @media (min-width: 993px) {
+
       .header .nav {
         display: flex;
         align-items: center;
@@ -33,6 +52,7 @@
         font-size: 1.2rem !important;
         font-weight: 600;
       }
+
     }
 
     /* BOTÓN HAMBURGUESA */
@@ -47,6 +67,7 @@
       cursor: pointer;
       padding: 0;
       z-index: 10002;
+      color: #6b4f3f;
     }
 
     .hamburger-btn .bar {
@@ -57,7 +78,7 @@
       transition: all 0.3s ease-in-out;
     }
 
-    /* FONDO OSCURO DEL MENÚ MÓVIL */
+    /* FONDO OSCURO AL ABRIR MENÚ */
     .menu-overlay {
       display: none;
       position: fixed;
@@ -68,8 +89,9 @@
       transition: opacity 0.3s ease;
     }
 
-    /* DISEÑO RESPONSIVE */
+    /* DISEÑO PARA MÓVIL Y TABLET */
     @media (max-width: 992px) {
+
       .header {
         position: sticky;
         top: 0;
@@ -91,7 +113,7 @@
         margin-left: auto;
       }
 
-      /* ANIMACIÓN HAMBURGUESA */
+      /* ANIMACIÓN DE HAMBURGUESA */
       .hamburger-btn.active .bar:nth-child(1) {
         transform: translateY(9.5px) rotate(45deg);
       }
@@ -104,7 +126,7 @@
         transform: translateY(-9.5px) rotate(-45deg);
       }
 
-      /* PANEL DESPLEGABLE */
+      /* PANEL LATERAL */
       .header .nav {
         position: fixed !important;
         top: 0;
@@ -112,13 +134,14 @@
         width: 280px;
         max-width: 82%;
         height: 100vh;
+        height: 100dvh;
         background-color: #ffffff;
         flex-direction: column !important;
         align-items: flex-start !important;
         justify-content: flex-start !important;
         padding: 5rem 1.5rem 2rem !important;
         gap: 0.5rem !important;
-        box-shadow: -5px 0 20px rgba(0, 0, 0, 0.15);
+        box-shadow: -5px 0 20px rgba(0,0,0,0.15);
         transition: right 0.35s ease-in-out;
         z-index: 10001;
         overflow-y: auto;
@@ -133,7 +156,7 @@
         opacity: 1;
       }
 
-      /* ELEMENTOS DEL MENÚ MÓVIL */
+      /* ENLACES MÓVILES */
       .header .nav > a,
       .header .nav .dropdown,
       .header .nav .dropdown-btn,
@@ -172,14 +195,21 @@
         margin-top: 0.75rem;
         text-align: center;
       }
+
     }
+
   </style>
+
 </head>
 
 <body>
 
-  <!-- ENCABEZADO -->
+  <!-- ==================================
+       ENCABEZADO
+  ================================== -->
+
   <header class="header">
+
     <a href="index.html" class="logo">
       <h1>Lombana Therapy</h1>
     </a>
@@ -191,18 +221,21 @@
       id="hamburger-btn"
       aria-label="Abrir menú"
       aria-expanded="false"
+      aria-controls="nav-menu"
     >
       <span class="bar"></span>
       <span class="bar"></span>
       <span class="bar"></span>
     </button>
 
-    <!-- MENÚ DE NAVEGACIÓN -->
-    <nav class="nav" id="nav-menu">
+    <!-- MENÚ PRINCIPAL -->
+    <nav class="nav" id="nav-menu" aria-label="Navegación principal">
 
-      <a href="index.html">Inicio</a>
+      <a href="index.html">
+        Inicio
+      </a>
 
-      <!-- SOLO USUARIOS CON SESIÓN -->
+      <!-- SOLO CON SESIÓN INICIADA -->
       <a
         href="mis-citas.html"
         id="btn-mis-citas"
@@ -212,35 +245,50 @@
         Citas
       </a>
 
-      <!-- TERAPIAS -->
+      <!-- MENÚ TERAPIAS -->
       <div class="dropdown">
-        <a href="terapias.html" class="dropdown-btn">
+
+        <a
+          href="terapias.html"
+          class="dropdown-btn"
+        >
           Terapias
         </a>
 
-        <div class="dropdown-content" id="menu-terapias">
+        <div
+          class="dropdown-content"
+          id="menu-terapias"
+        >
           <a href="terapias.html">
             Cargando terapias...
           </a>
         </div>
+
       </div>
 
-      <a href="agendar.html">Agendar terapia</a>
+      <a href="agendar.html">
+        Agendar terapia
+      </a>
 
-      <a href="#contacto">Contacto</a>
+      <a href="#contacto">
+        Contacto
+      </a>
 
-      <a href="#ubicacion">Ubicación</a>
+      <a href="#ubicacion">
+        Ubicación
+      </a>
 
-      <!-- SOLO USUARIOS SIN SESIÓN -->
+      <!-- LOGIN: SOLO SIN SESIÓN -->
       <a
         href="login.html"
         id="btn-login"
         class="solo-invitado"
+        hidden
       >
         Login
       </a>
 
-      <!-- SOLO USUARIOS CON SESIÓN -->
+      <!-- CERRAR SESIÓN: SOLO CON SESIÓN -->
       <button
         type="button"
         id="btn-logout"
@@ -252,62 +300,113 @@
       </button>
 
     </nav>
+
   </header>
 
-  <!-- FONDO OSCURO DEL MENÚ -->
-  <div class="menu-overlay" id="menu-overlay"></div>
+  <!-- FONDO OSCURO PARA MENÚ MÓVIL -->
+  <div
+    class="menu-overlay"
+    id="menu-overlay"
+  ></div>
 
-  <!-- CONTENIDO PRINCIPAL -->
-  <main>
 
-    <!-- BIENVENIDA -->
+  <!-- ==================================
+       CONTENIDO PRINCIPAL
+  ================================== -->
+
+  <main id="contenido-principal">
+
+    <!-- ==================================
+         BIENVENIDA
+    ================================== -->
+
     <section class="hero">
+
       <div class="hero-content">
 
         <h2>
-          Bienestar, equilibrio y terapia corporal personalizada
+          Bienestar, equilibrio y terapia
+          corporal personalizada
         </h2>
 
         <p>
-          En Lombana Therapy te ayudamos a mejorar tu bienestar físico
-          mediante terapias manuales, relajantes y quiroprácticas.
+          En Lombana Therapy te ayudamos a mejorar
+          tu bienestar físico mediante terapias
+          manuales, relajantes y quiroprácticas.
         </p>
 
-        <a href="agendar.html" class="btn-primary">
+        <a
+          href="agendar.html"
+          class="btn-primary"
+        >
           Agendar terapia
         </a>
 
       </div>
 
+      <!-- LOGOTIPO -->
       <div class="hero-logo-box">
+
         <img
           src="assets/img/lombana-therapy-logo.png"
-          alt="Logo Lombana Therapy"
+          alt="Logotipo de Lombana Therapy"
           class="hero-logo-img"
         >
+
       </div>
+
     </section>
 
-    <!-- TERAPIAS DINÁMICAS -->
-    <section class="section">
-      <h2>Nuestras terapias</h2>
 
-      <div id="terapias-destacadas" class="cards">
+    <!-- ==================================
+         TERAPIAS DESDE SUPABASE
+    ================================== -->
+
+    <section class="section" aria-labelledby="titulo-terapias">
+
+      <h2 id="titulo-terapias">
+        Nuestras terapias
+      </h2>
+
+      <!--
+        IMPORTANTE:
+        Este ID coincide con js/terapias.js
+        para mostrar las terapias de Supabase.
+      -->
+
+      <div
+        id="terapias-destacadas"
+        class="cards"
+        aria-live="polite"
+      >
         <p>Cargando terapias...</p>
       </div>
+
     </section>
 
-    <!-- CONTACTO -->
-    <section id="contacto" class="section contact-section">
-      <h2>Contacto</h2>
+
+    <!-- ==================================
+         CONTACTO
+    ================================== -->
+
+    <section
+      id="contacto"
+      class="section contact-section"
+    >
+
+      <h2>
+        Contacto
+      </h2>
 
       <h3 class="contact-subtitle">
-        Puedes escribirnos directamente por WhatsApp para resolver dudas
-        o pedir más información.
+        Puedes escribirnos directamente por
+        WhatsApp para resolver dudas o pedir
+        más información.
       </h3>
 
       <div class="contact-buttons">
 
+        <!-- WHATSAPP -->
         <a
           class="contact-btn whatsapp-btn"
           href="https://wa.me/525611676062?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20una%20terapia"
@@ -317,6 +416,7 @@
           WhatsApp
         </a>
 
+        <!-- FACEBOOK -->
         <a
           class="contact-btn facebook-btn"
           href="https://www.facebook.com/share/18qwNpB73q/"
@@ -327,22 +427,37 @@
         </a>
 
       </div>
+
     </section>
 
-    <!-- UBICACIÓN -->
-    <section id="ubicacion" class="section">
-      <h2>Ubicación</h2>
+
+    <!-- ==================================
+         UBICACIÓN
+    ================================== -->
+
+    <section
+      id="ubicacion"
+      class="section"
+    >
+
+      <h2>
+        Ubicación
+      </h2>
 
       <p>
-        Consulta la ubicación del consultorio en el siguiente mapa.
+        Consulta la ubicación del consultorio
+        en el siguiente mapa.
       </p>
 
       <h3 class="address-text">
-        Av. del Rosal 30, Los Ángeles, Iztapalapa,
-        09837 Ciudad de México, CDMX
+        Av. del Rosal 30, Los Ángeles,
+        Iztapalapa, 09837 Ciudad de México,
+        CDMX
       </h3>
 
+      <!-- MAPA DE GOOGLE -->
       <div class="map-container">
+
         <iframe
           src="https://www.google.com/maps?q=19.34731144219217,-99.07544267561784&z=17&output=embed"
           width="100%"
@@ -353,8 +468,10 @@
           referrerpolicy="no-referrer-when-downgrade"
           title="Ubicación de Lombana Therapy"
         ></iframe>
+
       </div>
 
+      <!-- ABRIR GOOGLE MAPS -->
       <a
         class="btn-primary map-btn"
         href="https://www.google.com/maps?q=19.34731144219217,-99.07544267561784"
@@ -368,111 +485,248 @@
 
   </main>
 
-  <!-- PIE DE PÁGINA -->
+
+  <!-- ==================================
+       PIE DE PÁGINA
+  ================================== -->
+
   <footer class="footer">
-    <p>Lombana Therapy © 2026</p>
+    <p>
+      Lombana Therapy © 2026
+    </p>
   </footer>
 
-  <!-- LIBRERÍAS Y ARCHIVOS JAVASCRIPT -->
+
+  <!-- ==================================
+       JAVASCRIPT
+  ================================== -->
+
+  <!-- FUNCIONALIDAD PRINCIPAL -->
   <script src="js/main.js"></script>
 
+  <!-- LIBRERÍA SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- CONEXIÓN A SUPABASE -->
   <script src="js/supabase.js"></script>
 
+  <!-- AUTENTICACIÓN -->
   <script src="js/auth.js"></script>
 
+  <!-- TERAPIAS -->
   <script src="js/terapias.js"></script>
 
-  <!-- CONTROL DE SESIÓN DEL MENÚ -->
+
+  <!-- ==================================
+       CONTROL DE SESIÓN DEL MENÚ
+  ================================== -->
+
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
 
-      const btnLogin = document.getElementById('btn-login');
-      const btnLogout = document.getElementById('btn-logout');
-      const btnCitas = document.getElementById('btn-mis-citas');
+    document.addEventListener(
+      "DOMContentLoaded",
+      async () => {
 
-      // MOSTRAR U OCULTAR ELEMENTOS
-      function configurarVisibilidad(elemento, mostrar) {
-        if (!elemento) return;
+        const btnLogin =
+          document.getElementById("btn-login");
 
-        elemento.hidden = !mostrar;
-        elemento.classList.toggle('oculto', !mostrar);
+        const btnLogout =
+          document.getElementById("btn-logout");
+
+        const btnCitas =
+          document.getElementById("btn-mis-citas");
+
+
+        /*
+          CONTROL DE VISIBILIDAD
+        */
+
+        function configurarVisibilidad(
+          elemento,
+          mostrar
+        ) {
+
+          if (!elemento) {
+            return;
+          }
+
+          elemento.hidden = !mostrar;
+
+          elemento.classList.toggle(
+            "oculto",
+            !mostrar
+          );
+
+        }
+
+
+        /*
+          ACTUALIZAR MENÚ SEGÚN SESIÓN
+        */
+
+        function actualizarMenu(session) {
+
+          const sesionActiva =
+            Boolean(session && session.user);
+
+          // LOGIN
+          configurarVisibilidad(
+            btnLogin,
+            !sesionActiva
+          );
+
+          // CERRAR SESIÓN
+          configurarVisibilidad(
+            btnLogout,
+            sesionActiva
+          );
+
+          // MIS CITAS
+          configurarVisibilidad(
+            btnCitas,
+            sesionActiva
+          );
+
+        }
+
+
+        /*
+          CONSULTAR SESIÓN AL INICIAR
+        */
+
+        try {
+
+          const { data, error } =
+            await supabaseClient.auth.getSession();
+
+          if (error) {
+
+            console.error(
+              "Error al consultar sesión:",
+              error
+            );
+
+            actualizarMenu(null);
+
+          } else {
+
+            actualizarMenu(data.session);
+
+          }
+
+        } catch (error) {
+
+          console.error(
+            "No se pudo verificar la sesión:",
+            error
+          );
+
+          actualizarMenu(null);
+
+        }
+
+
+        /*
+          DETECTAR INICIO Y CIERRE
+          DE SESIÓN AUTOMÁTICAMENTE
+        */
+
+        supabaseClient.auth.onAuthStateChange(
+          (event, session) => {
+
+            actualizarMenu(session);
+
+          }
+        );
+
       }
+    );
 
-      // ACTUALIZAR MENÚ SEGÚN LA SESIÓN
-      function actualizarMenu(session) {
-        const sesionActiva = Boolean(session && session.user);
+  </script>
 
-        // Login solo aparece sin sesión
-        configurarVisibilidad(btnLogin, !sesionActiva);
 
-        // Cerrar sesión solo aparece con sesión
-        configurarVisibilidad(btnLogout, sesionActiva);
+  <!-- ==================================
+       VERIFICAR SI ES ADMINISTRADOR
+  ================================== -->
 
-        // Citas solo aparece con sesión
-        configurarVisibilidad(btnCitas, sesionActiva);
-      }
+  <script>
 
-      // COMPROBAR SESIÓN AL CARGAR LA PÁGINA
+    async function mostrarOpcionesAdmin() {
+
       try {
+
         const { data, error } =
           await supabaseClient.auth.getSession();
 
         if (error) {
-          console.error('Error al consultar la sesión:', error);
-          actualizarMenu(null);
-        } else {
-          actualizarMenu(data.session);
+
+          console.error(
+            "Error al consultar sesión:",
+            error
+          );
+
+          return;
+
+        }
+
+        if (!data.session) {
+          return;
+        }
+
+        const usuario = data.session.user;
+
+        /*
+          CONSULTAR PERFIL EN SUPABASE
+        */
+
+        const {
+          data: perfil,
+          error: perfilError
+        } = await supabaseClient
+          .from("profiles")
+          .select("rol")
+          .eq("id", usuario.id)
+          .single();
+
+        if (perfilError) {
+
+          console.error(
+            "Error al consultar perfil:",
+            perfilError
+          );
+
+          return;
+
+        }
+
+        /*
+          SI ES ADMIN, REDIRIGIR
+        */
+
+        if (
+          perfil &&
+          perfil.rol === "admin"
+        ) {
+
+          window.location.replace(
+            "admin.html"
+          );
+
         }
 
       } catch (error) {
-        console.error('No se pudo comprobar la sesión:', error);
-        actualizarMenu(null);
+
+        console.error(
+          "Error al verificar administrador:",
+          error
+        );
+
       }
 
-      // DETECTAR CAMBIOS DE AUTENTICACIÓN
-      supabaseClient.auth.onAuthStateChange((event, session) => {
-        actualizarMenu(session);
-      });
-
-    });
-  </script>
-
-  <!-- REDIRECCIÓN DEL ADMINISTRADOR -->
-  <script>
-    async function mostrarOpcionesAdmin() {
-
-      const { data, error } =
-        await supabaseClient.auth.getSession();
-
-      if (error) {
-        console.error('Error al consultar la sesión:', error);
-        return;
-      }
-
-      if (!data.session) {
-        return;
-      }
-
-      const { data: perfil, error: perfilError } =
-        await supabaseClient
-          .from('profiles')
-          .select('rol')
-          .eq('id', data.session.user.id)
-          .single();
-
-      if (perfilError) {
-        console.error('Error al consultar el perfil:', perfilError);
-        return;
-      }
-
-      if (perfil && perfil.rol === 'admin') {
-        window.location.replace('admin.html');
-      }
     }
 
     mostrarOpcionesAdmin();
+
   </script>
 
 </body>
