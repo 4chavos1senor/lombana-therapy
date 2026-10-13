@@ -6,24 +6,27 @@
 ========================================= */
 
 /*
-  CONFIGURACIÓN PÚBLICA
+  Los valores públicos se obtienen de
+  js/config.js, generado desde .env.
 
-  La URL y la clave publicable pueden
-  utilizarse en el frontend.
-
-  NUNCA colocar aquí:
+  NUNCA utilizar aquí:
   - service_role
-  - sb_secret_...
-  - contraseñas de usuarios
-  - secretos JWT
+  - sb_secret_
+  - Contraseñas
+  - Secretos JWT
 */
 
+/* =========================================
+   CARGAR VARIABLES DE CONFIGURACIÓN
+========================================= */
+
+const configuracion = window.LOMBANA_CONFIG;
+
 const SUPABASE_URL =
-  "https://pqeqarxybindwbgsbdlq.supabase.co";
+  configuracion?.supabaseUrl;
 
 const SUPABASE_ANON_KEY =
-  "sb_publishable_bh_S678j3018LiFEUpNWJg_4fRZGPD3";
-
+  configuracion?.supabasePublishableKey;
 
 /* =========================================
    VALIDACIÓN DE CONFIGURACIÓN
@@ -31,7 +34,13 @@ const SUPABASE_ANON_KEY =
 
 function validarConfiguracionSupabase() {
 
-  // Comprobar que existe la URL
+  if (!configuracion) {
+    throw new Error(
+      "No se encontró js/config.js. " +
+      "Ejecuta node scripts/build-config.cjs"
+    );
+  }
+
   if (
     !SUPABASE_URL ||
     !SUPABASE_URL.startsWith("https://")
@@ -41,7 +50,6 @@ function validarConfiguracionSupabase() {
     );
   }
 
-  // Comprobar que existe la clave publicable
   if (
     !SUPABASE_ANON_KEY ||
     !SUPABASE_ANON_KEY.startsWith("sb_publishable_")
@@ -51,16 +59,6 @@ function validarConfiguracionSupabase() {
     );
   }
 
-  // Comprobar que no se utilizó una clave secreta
-  if (
-    SUPABASE_ANON_KEY.startsWith("sb_secret_")
-  ) {
-    throw new Error(
-      "No se permite utilizar una clave secreta en el navegador."
-    );
-  }
-
-  // Comprobar que la librería de Supabase esté cargada
   if (
     typeof supabase === "undefined" ||
     typeof supabase.createClient !== "function"
@@ -73,23 +71,11 @@ function validarConfiguracionSupabase() {
   return true;
 }
 
-
 /* =========================================
-   CREACIÓN DEL CLIENTE
+   CREACIÓN DEL CLIENTE SUPABASE
 ========================================= */
 
 validarConfiguracionSupabase();
-
-/*
-  Conservamos el nombre supabaseClient
-  porque otros archivos del proyecto
-  lo utilizan:
-
-  - auth.js
-  - terapias.js
-  - agenda.js
-  - admin.js
-*/
 
 const supabaseClient = supabase.createClient(
   SUPABASE_URL,
