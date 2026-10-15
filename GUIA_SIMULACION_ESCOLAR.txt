@@ -1,7 +1,26 @@
-LOMBANA THERAPY - SIMULACIÓN ESCOLAR DE CITA Y PAGO
+LOMBANA THERAPY - SIMULACION SIN COBRO Y AGENDA REAL
 
-Abre el sitio con Live Server. Inicia sesión como antes y entra a Agendar terapia. Elige una terapia, fecha, hora y método de pago; pulsa Confirmar cita (simulación).
+1. Inicia sesion con una cuenta de paciente.
+2. Elige terapia, fecha y horario libre en agendar.html.
+3. Selecciona Simulacion escolar (sin cobro; agenda al finalizar).
+4. Presiona Procesar simulacion. Se muestra el resultado ilustrativo;
+   NO existe una cita real hasta pulsar el boton siguiente.
+5. Presiona Agendar terapia en cita-demo.html.
+6. El sistema comprueba sesion, consulta horarios globales e intenta
+   insertar en Supabase. El trigger de la base de datos impide empalmes.
+7. Solo si Supabase devuelve un folio real se abre cita-confirmada.html.
+   La cita deberia aparecer tambien en Mis citas.
 
-Se abrirá cita-demo.html con los datos y un folio DEMO. No se invocan Edge Functions para cobrar ni reservar. No se guardan citas ni pagos en Supabase. No constituye pago o reserva real.
+La simulacion NO procesa cobros ni registra pagos como realizados.
+La opcion "Reservar cita real" crea una cita directamente sin pago.
+La opcion "Efectivo" usa la funcion cash-booking y deja pago pendiente.
+La opcion "Mercado Pago" solo confirma cita cuando el servidor verifica
+un pago aprobado; no crear otra cita por segunda vez tras la aprobacion.
 
-Se mantuvieron las demás pantallas, componentes y código de inicio de sesión. Para regresar al flujo real se requiere restaurar el anterior archivo js/agenda.js y la UI de métodos de pago.
+REQUISITOS
+- js/config.js con clave PUBLICABLE, no con claves privadas.
+- Supabase Auth y politicas RLS que permitan insertar y leer citas propias.
+- SQL 03 agenda unica instalado y lt_horarios_ocupados accesible.
+- Para efectivo: Edge Function cash-booking desplegada y SQL 02 instalado.
+- Para Mercado Pago: funciones mp-checkout/mp-webhook y credenciales reales.
+No modificar ni borrar los registros existentes durante la instalacion.
