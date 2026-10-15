@@ -68,14 +68,23 @@ function configurarFechaMinima() {
   }
 }
 
+function obtenerMomentoConsultorio() {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'America/Mexico_City',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+    }).formatToParts(new Date())
+      .filter(parte => parte.type !== 'literal')
+      .map(parte => [parte.type, parte.value])
+  );
+  return {
+    fecha: `${partes.year}-${partes.month}-${partes.day}`,
+    hora: `${partes.hour}:${partes.minute}:${partes.second}`
+  };
+}
 function obtenerFechaActualTexto() {
-  const ahora = new Date();
-
-  const anio = ahora.getFullYear();
-  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-  const dia = String(ahora.getDate()).padStart(2, '0');
-
-  return `${anio}-${mes}-${dia}`;
+  return obtenerMomentoConsultorio().fecha;
 }
 
 function obtenerSlug(nombre) {
@@ -391,33 +400,13 @@ function fechaEsAnteriorAHoy(fechaTexto) {
 }
 
 function horarioYaPaso(horario) {
-  if (!horario || !horario.fecha || !horario.hora_inicio) {
+  if (!horario?.fecha || !/^\d{2}:\d{2}(?::\d{2})?$/.test(horario.hora_inicio || '')) {
     return true;
   }
-
-  const fechaHoraInicio = construirFechaHoraLocal(
-    horario.fecha,
-    horario.hora_inicio
-  );
-
-  const ahora = new Date();
-
-  return fechaHoraInicio <= ahora;
-}
-
-function construirFechaHoraLocal(fechaTexto, horaTexto) {
-  const partesFecha = fechaTexto.split('-');
-  const partesHora = horaTexto.split(':');
-
-  const anio = Number(partesFecha[0]);
-  const mes = Number(partesFecha[1]) - 1;
-  const dia = Number(partesFecha[2]);
-
-  const hora = Number(partesHora[0]);
-  const minutos = Number(partesHora[1] || 0);
-  const segundos = Number(partesHora[2] || 0);
-
-  return new Date(anio, mes, dia, hora, minutos, segundos);
+  const actual = obtenerMomentoConsultorio();
+  const horaInicio = horario.hora_inicio.length === 5
+    ? horario.hora_inicio + ':00' : horario.hora_inicio;
+  return `${horario.fecha}T${horaInicio}` <= `${actual.fecha}T${actual.hora}`;
 }
 
 async function cerrarSesion() {
