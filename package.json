@@ -11,7 +11,7 @@
     "dev": "node server.cjs",
     "build:config": "node scripts/build-config.cjs",
     "build:supabase": "node scripts/build-supabase.cjs",
-    "test": "node --test tests/api.test.cjs tests/horarios.test.cjs"
+    "test": "node --test tests/*.test.cjs"
   },
   "repository": {
     "type": "git",
