@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confirmación de cita | Lombana Therapy</title>
+<link rel="stylesheet" href="css/styles.css"><link rel="stylesheet" href="css/accesibilidad.css"><link rel="stylesheet" href="css/chatbot.css">
+<style>.lt-receipt{max-width:720px;margin:2rem auto;padding:1.6rem}.lt-receipt dl{display:grid;grid-template-columns:9rem minmax(0,1fr);gap:.75rem}.lt-receipt dt{font-weight:700}.lt-receipt dd{margin:0;overflow-wrap:anywhere}.lt-receipt a{display:inline-block;margin:.7rem .8rem .3rem 0}.lt-receipt-warning{font-weight:600}</style>
+<link rel="icon" type="image/png" href="assets/img/lombana-therapy-logo.png">
+</head><body><main class="form-section" id="contenido-principal" tabindex="-1">
+<section class="form-card lt-receipt" aria-labelledby="titulo-cita"><h1 id="titulo-cita">Confirmación de cita</h1>
+<p id="lt-recibo-estado" role="status" aria-live="polite">Verificando la cita en Supabase...</p>
+<dl id="lt-recibo-datos" hidden><dt>Folio</dt><dd id="lt-recibo-id"></dd><dt>Terapia</dt><dd id="lt-recibo-terapia"></dd><dt>Fecha</dt><dd id="lt-recibo-fecha"></dd><dt>Horario</dt><dd id="lt-recibo-hora"></dd><dt>Estado de cita</dt><dd id="lt-recibo-status"></dd><dt>Pago</dt><dd id="lt-recibo-pago"></dd></dl>
+<p class="lt-receipt-warning">Esta confirmación acredita una cita registrada; no es un recibo de dinero salvo que el estado del pago lo indique expresamente.</p>
+<a href="mis-citas.html">Ver mis citas</a><a href="index.html">Ir al inicio</a></section></main>
+<script src="js/vendor/supabase.bundle.js"></script><script src="js/config.js"></script><script src="js/supabase.js"></script>
+<script>
+(async()=>{
+ const $ = id=>document.getElementById(id);const estado=$('lt-recibo-estado');
+ const id=new URLSearchParams(location.search).get('id')||'';
+ if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id)){estado.textContent='Falta un folio de cita válido.';return;}
+ try {
+   const {data:identidad,error:authError}=await supabaseClient.auth.getUser();
+   if(authError||!identidad?.user){estado.textContent='Inicia sesión para consultar la cita.';return;}
+   const {data:cita,error}=await supabaseClient.from('appointments')
+     .select('id,fecha,hora_inicio,status,therapies(nombre)')
+     .eq('id',id).eq('user_id',identidad.user.id).maybeSingle();
+   if(error||!cita){estado.textContent='No se encontró una cita verificable con este folio y usuario. Revisa Mis citas.';return;}
+   if(cita.status==='cancelada'){estado.textContent='Esta cita está cancelada.';return;}
+   const valores={id:cita.id,terapia:cita.therapies?.nombre||'Terapia',fecha:cita.fecha,
+     hora:(cita.hora_inicio||'').slice(0,5),status:'Confirmada',pago:'No hay cobro registrado en esta confirmación.'};
+   // Si la tabla opcional aún no existe, no inventar un pago.
+   const {data:pago,error:errorPago}=await supabaseClient.from('cash_bookings')
+     .select('payment_status').eq('appointment_id',id).eq('user_id',identidad.user.id).maybeSingle();
+   if(!errorPago&&pago){valores.pago=pago.payment_status==='paid_in_person'?
+     'Pagado en establecimiento (registrado en el sistema)':'Pendiente de pago en establecimiento.';}
+   for(const [clave,valor] of Object.entries(valores)) $('lt-recibo-'+clave).textContent=valor||'—';
+   $('lt-recibo-datos').hidden=false;estado.textContent='¡Cita verificada correctamente!';
+ }catch(e){estado.textContent='No se pudo verificar el folio. Consulta Mis citas.';}
+})();
+</script><script defer src="js/accesibilidad.js"></script><script defer src="js/chatbot.js"></script>
+</body></html>

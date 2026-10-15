@@ -161,6 +161,8 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="css/accesibilidad.css">
+  <link rel="stylesheet" href="css/chatbot.css">
 </head>
 <body>
 
@@ -225,7 +227,7 @@
   <!-- FONDO OSCURO MÓVIL -->
   <div class="menu-overlay" id="menu-overlay"></div>
 
-  <main id="contenido-principal">
+  <main id="contenido-principal" tabindex="-1">
     <section class="form-section">
       <form class="form-card" onsubmit="registrarUsuario(event)">
         <h2>Crear cuenta</h2>
@@ -268,5 +270,7 @@
 
   <!-- Función registrarUsuario(event) -->
   <script src="js/auth.js"></script>
+  <script defer src="js/accesibilidad.js"></script>
+  <script defer src="js/chatbot.js"></script>
 </body>
 </html>

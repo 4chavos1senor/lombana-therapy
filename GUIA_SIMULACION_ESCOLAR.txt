@@ -1,0 +1,7 @@
+LOMBANA THERAPY - SIMULACIÓN ESCOLAR DE CITA Y PAGO
+
+Abre el sitio con Live Server. Inicia sesión como antes y entra a Agendar terapia. Elige una terapia, fecha, hora y método de pago; pulsa Confirmar cita (simulación).
+
+Se abrirá cita-demo.html con los datos y un folio DEMO. No se invocan Edge Functions para cobrar ni reservar. No se guardan citas ni pagos en Supabase. No constituye pago o reserva real.
+
+Se mantuvieron las demás pantallas, componentes y código de inicio de sesión. Para regresar al flujo real se requiere restaurar el anterior archivo js/agenda.js y la UI de métodos de pago.

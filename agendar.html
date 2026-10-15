@@ -195,6 +195,9 @@
 
     }
   </style>
+  <link rel="stylesheet" href="css/accesibilidad.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <link rel="stylesheet" href="css/pagos.css">
 </head>
 
 <body>
@@ -311,7 +314,7 @@
        CONTENIDO PRINCIPAL
   ================================== -->
 
-  <main id="contenido-principal">
+  <main id="contenido-principal" tabindex="-1">
 
     <section
       class="form-section"
@@ -381,10 +384,14 @@
           </p>
         </div>
 
+        <p id="horario-estado" role="status" aria-live="polite">Ningún horario seleccionado.</p>
+        <div id="mp-components" aria-label="Resumen y forma de confirmación"></div>
+        <p class="info-text" id="estado-reserva" role="status" aria-live="polite"></p>
         <!-- CONFIRMAR CITA -->
         <button
           type="button"
           class="btn-primary"
+          id="btn-pagar"
           onclick="confirmarCita()"
         >
           Confirmar cita
@@ -419,7 +426,9 @@
   <script src="js/terapias.js"></script>
 
   <!-- AGENDAMIENTO DE CITAS -->
+  <script src="js/horarios-solapados.js"></script>
   <script src="js/agenda.js"></script>
+  <script src="js/pagos-componentes.js"></script>
 
   <!-- ==================================
        MENÚ HAMBURGUESA RESPONSIVE
@@ -559,5 +568,7 @@
     });
   </script>
 
+  <script defer src="js/accesibilidad.js"></script>
+  <script defer src="js/chatbot.js"></script>
 </body>
 </html>

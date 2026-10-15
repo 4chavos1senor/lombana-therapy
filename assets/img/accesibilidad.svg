@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-labelledby="title">
+  <title>Accesibilidad</title>
+  <g fill="none" stroke="#624332" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="100" cy="100" r="82"/>
+    <circle cx="100" cy="52" r="12"/>
+    <path d="M56 76 Q100 82 144 76"/>
+    <path d="M100 90 V122"/>
+    <path d="M94 120 L80 164"/>
+    <path d="M106 120 L120 164"/>
+  </g>
+</svg>

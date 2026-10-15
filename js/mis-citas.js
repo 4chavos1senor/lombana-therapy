@@ -44,6 +44,12 @@ async function cargarMisCitas() {
   }
 
   contenedor.innerHTML = '';
+  let pagoPorCita = new Map();
+  try {
+    const { data: pagos, error: errorPagos } = await supabaseClient
+      .from('cash_bookings').select('appointment_id,payment_status').eq('user_id', user.id);
+    if (!errorPagos) pagoPorCita = new Map((pagos || []).map(p => [p.appointment_id,p.payment_status]));
+  } catch { /* La tabla de pagos presenciales es opcional hasta instalar SQL. */ }
 
   citas.forEach(cita => {
     const tarjeta = document.createElement('div');
@@ -71,6 +77,9 @@ async function cargarMisCitas() {
     estadoTexto.append(estadoEtiqueta, estadoSpan);
     tarjeta.append(titulo, detalle('Fecha', cita.fecha || ''),
       detalle('Hora', formatearHora(cita.hora_inicio)), estadoTexto);
+    const estadoPago = pagoPorCita.get(cita.id);
+    if (estadoPago) tarjeta.appendChild(detalle('Pago', estadoPago === 'paid_in_person'
+      ? 'Pagado en establecimiento' : 'Pendiente de pago en establecimiento'));
     if (estaCancelada) {
       const aviso = document.createElement('p');
       aviso.textContent = 'Esta cita fue cancelada.';

@@ -1,29 +1,13 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const dotenv = require("dotenv");
+const { readEnvironment } = require("./env.cjs");
 
 const raiz = path.resolve(__dirname, "..");
 const archivoEnv = path.join(raiz, ".env");
 
-// Comprobar existencia de .env
-if (!fs.existsSync(archivoEnv)) {
-  console.error("ERROR: Falta el archivo .env");
-  process.exit(1);
-}
-
-// Leer las variables
-const resultado = dotenv.config({
-  path: archivoEnv,
-  quiet: true
-});
-
-if (resultado.error) {
-  console.error("ERROR: No se pudo leer .env");
-  process.exit(1);
-}
-
-const variables = resultado.parsed || {};
+// Las variables se leen en Node; nunca se sirve el archivo .env al navegador.
+const variables = readEnvironment(archivoEnv);
 
 const url = variables.SUPABASE_URL?.trim();
 const clave = variables.SUPABASE_PUBLISHABLE_KEY?.trim();
