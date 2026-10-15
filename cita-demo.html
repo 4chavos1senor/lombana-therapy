@@ -1,6 +1,52 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Confirmación de demostración - Lombana Therapy</title><link rel="stylesheet" href="css/styles.css"><link rel="stylesheet" href="css/accesibilidad.css"><style>.demo-card{max-width:680px;margin:3rem auto;padding:2rem}.demo-marker{padding:.7rem 1rem;background:#fff3da;color:#654321;border:2px solid #92734a;border-radius:10px;font-weight:bold}.demo-table{width:100%;border-collapse:collapse}.demo-table th,.demo-table td{text-align:left;padding:12px;border-bottom:1px solid #ddd}.demo-title{font-size:1.6rem}.demo-success{font-size:3rem;color:#437d54}</style><script src="js/accesibilidad.js" defer></script><link rel="stylesheet" href="css/chatbot.css"><script defer src="js/chatbot.js"></script><link rel="icon" type="image/png" href="assets/img/lombana-therapy-logo.png">
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulación y agenda de terapia | Lombana Therapy</title>
+<link rel="icon" href="assets/img/lombana-therapy-logo.png">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/accesibilidad.css">
+<link rel="stylesheet" href="css/chatbot.css">
+<style>
+[hidden]{display:none!important}
+.demo-card{max-width:720px;margin:3rem auto;padding:2rem}
+.demo-marker{padding:.75rem 1rem;background:#fff3da;color:#654321;border:2px solid #92734a;border-radius:10px;font-weight:700}
+.demo-table{width:100%;border-collapse:collapse}
+.demo-table th,.demo-table td{text-align:left;padding:12px;border-bottom:1px solid #aaa;overflow-wrap:anywhere}
+.demo-table th{width:42%}
+.demo-title{font-size:1.6rem}.demo-success{font-size:3rem;color:#437d54}
+.demo-action{margin:1.25rem 0;display:flex;flex-direction:column;align-items:flex-start;gap:.7rem}
+.demo-action button{background:#624535;color:white;font-size:1.1rem;font-weight:700;padding:14px 20px;border:0;border-radius:9px;cursor:pointer}
+.demo-action button:disabled{opacity:.6;cursor:wait}
+.demo-info{font-weight:600}.demo-links{margin-top:1.5rem}
+</style>
 </head>
-<body><main id="contenido-principal" class="form-section"><section class="form-card demo-card"><p class="demo-marker">SIMULACIÓN ESCOLAR — No es una reservación real ni un comprobante de pago.</p><div class="demo-success" aria-hidden="true">✓</div><h1 class="demo-title">¡Tu cita de demostración ha sido confirmada!</h1><p id="demo-status" role="status">Consultando datos de la simulación...</p><table id="demo-details" class="demo-table" hidden><tbody><tr><th scope="row">Folio de demostración</th><td id="demo-folio"></td></tr><tr><th scope="row">Terapia</th><td id="demo-terapia"></td></tr><tr><th scope="row">Fecha</th><td id="demo-fecha"></td></tr><tr><th scope="row">Hora</th><td id="demo-hora"></td></tr><tr><th scope="row">Forma de pago elegida</th><td id="demo-metodo"></td></tr><tr><th scope="row">Estado</th><td>Confirmación simulada (sin cobro)</td></tr></tbody></table><p><strong>Importante:</strong> no se realizó ningún cargo, no se guardó ningún pago ni se bloqueó el horario en el sistema. Para una cita real se requiere activar el proceso de reservación.</p><p><a href="agendar.html">Volver a agendar</a> · <a href="index.html">Ir al inicio</a></p></section></main><script>
-(()=>{const s=document.getElementById('demo-status');let d;try{d=JSON.parse(sessionStorage.getItem('lombana_demo_cita')||'null')}catch{}if(!d||!d.folio||!d.fecha||!d.horario){s.textContent='No hay datos de una simulación reciente. Vuelve a la página de agendamiento.';return;}for(const [k,v] of Object.entries({folio:d.folio,terapia:d.terapia,fecha:d.fecha,hora:d.horario,metodo:d.metodo})){document.getElementById('demo-'+k).textContent=v||'—'}document.getElementById('demo-details').hidden=false;s.textContent='Datos generados correctamente para fines educativos.'})();
-</script></body></html>
+<body><main id="contenido-principal" class="form-section" tabindex="-1">
+<section class="form-card demo-card" aria-labelledby="demo-titulo">
+<p class="demo-marker">SIMULACIÓN ESCOLAR: no se efectuó un cobro real. La cita NO se registra hasta seleccionar «Agendar terapia».</p>
+<div class="demo-success" aria-hidden="true">✓</div>
+<h1 id="demo-titulo" class="demo-title">¡Simulación completada!</h1>
+<p id="demo-status" role="status" aria-live="polite">Consultando datos de la simulación...</p>
+<table id="demo-details" class="demo-table" hidden><tbody>
+<tr><th scope="row">Folio de simulación</th><td id="demo-folio"></td></tr>
+<tr><th scope="row">Terapia</th><td id="demo-terapia"></td></tr>
+<tr><th scope="row">Fecha</th><td id="demo-fecha"></td></tr>
+<tr><th scope="row">Hora</th><td id="demo-hora"></td></tr>
+<tr><th scope="row">Método</th><td>Simulación escolar (sin cobro)</td></tr>
+<tr><th scope="row">Estado de reserva</th><td id="demo-estado">Pendiente de agendar</td></tr>
+</tbody></table>
+<div class="demo-action">
+<p class="demo-info">Para ocupar el horario de verdad, pulsa «Agendar terapia». La cita quedará registrada sin que se realice un cobro.</p>
+<button type="button" id="btn-agendar-demo" hidden>Agendar terapia</button>
+<p id="demo-error" role="alert" aria-live="assertive" hidden></p>
+</div>
+<p><strong>Importante:</strong> completar la simulación no prueba ningún pago. La reserva se confirmará únicamente cuando Supabase devuelva el folio real, y podrá verse en «Mis citas».</p>
+<p class="demo-links"><a href="agendar.html">Volver a agendar</a> · <a href="mis-citas.html">Ver mis citas</a> · <a href="index.html">Ir al inicio</a></p>
+</section></main>
+<script src="js/vendor/supabase.bundle.js"></script>
+<script src="js/config.js?v=20261015"></script>
+<script src="js/supabase.js"></script>
+<script src="js/cita-demo.js" defer></script>
+<script src="js/accesibilidad.js" defer></script>
+<script src="js/chatbot.js" defer></script>
+</body></html>
