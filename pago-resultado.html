@@ -5,6 +5,7 @@
 <title>Confirmación del pago - Lombana Therapy</title>
 <link rel="stylesheet" href="css/styles.css"><link rel="stylesheet" href="css/accesibilidad.css">
 <style>
+[hidden]{ display:none !important; }
 .payment-confirmation { max-width:650px; margin:3rem auto; padding:2rem; }
 .payment-confirmation h1 { margin-bottom:1rem; }
 .payment-detail { display:grid; grid-template-columns: 1fr auto; gap: .6rem 1rem; margin:1.25rem 0; }
@@ -27,7 +28,7 @@
 <dt>Folio de cita</dt><dd id="appointment-id"></dd>
 </dl>
 <p id="payment-note">El pago se confirma únicamente cuando Mercado Pago lo valida y Supabase actualiza el estado.</p>
-<nav class="payment-links" aria-label="Opciones después del pago"><a href="mis-citas.html">Ver mis citas</a><a href="agendar.html">Volver a agendar</a></nav>
+<nav class="payment-links" aria-label="Opciones después del pago"><a id="lt-ver-cita-pagada" href="mis-citas.html" hidden>Ver terapia agendada</a><a href="mis-citas.html">Ver mis citas</a><a href="agendar.html">Volver a agendar</a></nav>
 </section>
 </main>
 <script src="js/vendor/supabase.bundle.js"></script>
@@ -61,6 +62,7 @@
      .select('id,status,fecha,hora_inicio,amount,appointment_id').eq('id',orderId).eq('user_id',auth.user.id).maybeSingle();
    if(error){result.textContent='No fue posible consultar la operación. Intenta de nuevo desde Mis citas.';return false;}
    if(!order){result.textContent='No se encontró esta operación en tu cuenta.';return false;}
+   $('lt-ver-cita-pagada').hidden=true;
    result.textContent=labels[order.status] || 'Estamos revisando el estado de tu pago.';
    $('payment-details').hidden=false;
    $('payment-id').textContent=order.id;
@@ -69,6 +71,9 @@
    $('payment-amount').textContent=new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(order.amount||0));
    $('appointment-id').textContent=order.appointment_id || (order.status==='approved'?'Consulta Mis citas':'Pendiente de confirmación');
    if(order.status==='approved' && order.appointment_id){
+     const irACita=$('lt-ver-cita-pagada');
+     irACita.href='cita-confirmada.html?id='+encodeURIComponent(order.appointment_id);
+     irACita.hidden=false;
      $('payment-note').textContent='La confirmación fue verificada con los datos de tu cuenta. Puedes consultar tu cita en Mis citas.';
      sessionStorage.removeItem('lombana_payment_order_id');
      return false;

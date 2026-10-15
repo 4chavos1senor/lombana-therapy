@@ -469,7 +469,8 @@ async function confirmarCita() {
         terapia: elegido || 'Terapia elegida',
         fecha: horarioSeleccionado.fecha,
         horario: horarioSeleccionado.hora_inicio.slice(0,5),
-        metodo: 'Simulación escolar — sin cobro ni reserva',
+        metodo: 'Simulación escolar — sin cobro, reserva pendiente',
+        therapy_id: String(terapiaId),
         creado: new Date().toISOString()
       };
       sessionStorage.setItem('lombana_demo_cita',JSON.stringify(datos));
