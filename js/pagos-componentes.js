@@ -33,8 +33,8 @@
       $('lt-estado-pago').textContent=valor==='demo'?'Sin cobro; reserva pendiente':valor==='reserva'?'Ningún pago registrado':'Pendiente de confirmación';
       $('lt-aviso-metodo').textContent={
         reserva:'Crea una cita real en Supabase. Esta opción NO registra pagos ni asegura que se haya cobrado.',
-        efectivo:'Requiere desplegar cash-booking y la migración SQL; la cita solo se confirma si el servidor la guarda. El pago queda pendiente.',
-        mercadopago:'Requiere configurar Mercado Pago y desplegar mp-checkout/mp-webhook. La cita solo se confirma tras aprobación verificada del pago.',
+        efectivo:'Tu cita se confirmará al guardar la reserva. Podrás pagar en el establecimiento el día de tu terapia.',
+        mercadopago:'Serás dirigido a Mercado Pago para realizar el pago de forma segura. Tu cita se confirmará únicamente cuando el pago sea aprobado.',
         demo:'Primero se muestra una demostración sin cobro. En la siguiente pantalla pulsa «Agendar terapia» para registrar la cita real en Supabase.'
       }[valor];
       const boton=$('btn-pagar');if(boton)boton.textContent=valor==='demo'?'Procesar simulación':valor==='efectivo'?'Reservar y pagar en establecimiento':valor==='mercadopago'?'Continuar a Mercado Pago':'Confirmar cita real';
