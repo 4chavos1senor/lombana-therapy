@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confirmación del pago - Lombana Therapy</title>
+<link rel="stylesheet" href="css/styles.css"><link rel="stylesheet" href="css/accesibilidad.css">
+<style>
+.payment-confirmation { max-width:650px; margin:3rem auto; padding:2rem; }
+.payment-confirmation h1 { margin-bottom:1rem; }
+.payment-detail { display:grid; grid-template-columns: 1fr auto; gap: .6rem 1rem; margin:1.25rem 0; }
+.payment-detail dt { font-weight:600; } .payment-detail dd { margin:0; text-align:right; overflow-wrap:anywhere; }
+.payment-status {padding:1rem; border:2px solid currentColor; border-radius:10px; font-weight:700;}
+.payment-links {display:flex; gap:1rem; flex-wrap:wrap; margin-top:1.5rem;}
+</style>
+<link rel="icon" type="image/png" href="assets/img/lombana-therapy-logo.png">
+</head>
+<body>
+<main class="form-section" id="contenido-principal">
+<section class="form-card payment-confirmation">
+<h1>Resultado de tu pago</h1>
+<p id="payment-result" role="status" aria-live="polite" class="payment-status">Verificando tu pago...</p>
+<dl id="payment-details" class="payment-detail" hidden>
+<dt>Folio de operación</dt><dd id="payment-id"></dd>
+<dt>Fecha de cita</dt><dd id="payment-date"></dd>
+<dt>Hora de cita</dt><dd id="payment-time"></dd>
+<dt>Importe</dt><dd id="payment-amount"></dd>
+<dt>Folio de cita</dt><dd id="appointment-id"></dd>
+</dl>
+<p id="payment-note">El pago se confirma únicamente cuando Mercado Pago lo valida y Supabase actualiza el estado.</p>
+<nav class="payment-links" aria-label="Opciones después del pago"><a href="mis-citas.html">Ver mis citas</a><a href="agendar.html">Volver a agendar</a></nav>
+</section>
+</main>
+<script src="js/vendor/supabase.bundle.js"></script>
+<script src="js/config.js"></script>
+<script src="js/supabase.js"></script>
+<script defer src="js/accesibilidad.js"></script>
+<script defer src="js/chatbot.js"></script>
+<script>
+(async () => {
+ const $ = id => document.getElementById(id);
+ const result = $('payment-result');
+ const { data: auth, error: authError } = await supabaseClient.auth.getUser();
+ if (authError || !auth?.user) { result.textContent='Inicia sesión para consultar el resultado de tu pago.'; return; }
+ const params = new URLSearchParams(location.search);
+ const queryId = params.get('external_reference');
+ const savedId = sessionStorage.getItem('lombana_payment_order_id');
+ const orderId = /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(queryId||'') ? queryId : (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(savedId||'') ? savedId : null);
+ if (!orderId) { result.textContent='No se identificó una operación reciente. Consulta el estado desde Mis citas.'; return; }
+ const labels={
+ approved:'¡Pago aprobado! Tu cita está confirmada.',
+ pending:'Pago en proceso de validación. Espera unos momentos; la cita aún no está confirmada.',
+ review:'El pago requiere revisión. Contacta al consultorio con tu folio.',
+ failed:'No fue posible iniciar este pago.',
+ expired:'La solicitud de pago venció.',
+ rejected:'El pago fue rechazado.',
+ refunded:'El pago fue reembolsado.'
+ };
+ let attempts=0;
+ async function check(){
+   const {data:order,error}=await supabaseClient.from('mp_orders')
+     .select('id,status,fecha,hora_inicio,amount,appointment_id').eq('id',orderId).eq('user_id',auth.user.id).maybeSingle();
+   if(error){result.textContent='No fue posible consultar la operación. Intenta de nuevo desde Mis citas.';return false;}
+   if(!order){result.textContent='No se encontró esta operación en tu cuenta.';return false;}
+   result.textContent=labels[order.status] || 'Estamos revisando el estado de tu pago.';
+   $('payment-details').hidden=false;
+   $('payment-id').textContent=order.id;
+   $('payment-date').textContent=order.fecha || '—';
+   $('payment-time').textContent=(order.hora_inicio||'—').slice(0,5);
+   $('payment-amount').textContent=new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(order.amount||0));
+   $('appointment-id').textContent=order.appointment_id || (order.status==='approved'?'Consulta Mis citas':'Pendiente de confirmación');
+   if(order.status==='approved' && order.appointment_id){
+     $('payment-note').textContent='La confirmación fue verificada con los datos de tu cuenta. Puedes consultar tu cita en Mis citas.';
+     sessionStorage.removeItem('lombana_payment_order_id');
+     return false;
+   }
+   return order.status==='pending';
+ }
+ let retry=await check();
+ while(retry && attempts<10){await new Promise(resolve=>setTimeout(resolve,3000)); attempts++; retry=await check();}
+ if(retry) $('payment-note').textContent='La validación continúa. Puedes regresar más tarde a Mis citas para verificar tu reserva.';
+})();
+</script>
+</body>
+</html>

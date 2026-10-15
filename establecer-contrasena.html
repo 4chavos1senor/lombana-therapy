@@ -1,0 +1,310 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>Establecer contraseña - Lombana Therapy</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/accesibilidad.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+<link rel="icon" type="image/png" href="assets/img/lombana-therapy-logo.png">
+</head>
+
+<body>
+
+  <header class="header">
+    <div class="logo">
+      <h1>Lombana Therapy</h1>
+      <p>Activación de cuenta administrativa</p>
+    </div>
+  </header>
+
+  <main id="contenido-principal" tabindex="-1">
+
+    <section class="section"
+             aria-labelledby="titulo-contrasena">
+
+      <h2 id="titulo-contrasena">
+        Establecer contraseña
+      </h2>
+
+      <div class="admin-box">
+
+        <p id="estado-invitacion"
+           role="status"
+           aria-live="polite">
+          Verificando tu invitación...
+        </p>
+
+        <form id="form-contrasena" hidden>
+
+          <p>
+            Crea una contraseña para acceder
+            a tu cuenta administrativa.
+          </p>
+
+          <div class="admin-form-grid">
+
+            <div>
+              <label for="nueva-contrasena">
+                Nueva contraseña
+              </label>
+
+              <input
+                type="password"
+                id="nueva-contrasena"
+                minlength="8"
+                autocomplete="new-password"
+                required
+              >
+            </div>
+
+            <div>
+              <label for="confirmar-contrasena">
+                Confirmar contraseña
+              </label>
+
+              <input
+                type="password"
+                id="confirmar-contrasena"
+                minlength="8"
+                autocomplete="new-password"
+                required
+              >
+            </div>
+
+          </div>
+
+          <p>
+            Utiliza una contraseña única y segura
+            de al menos 8 caracteres.
+          </p>
+
+          <button
+            id="btn-guardar-contrasena"
+            type="submit"
+            class="btn-primary"
+          >
+            Guardar contraseña
+          </button>
+
+        </form>
+
+        <p id="mensaje-contrasena"
+           role="status"
+           aria-live="polite"></p>
+
+        <p>
+          <a href="login.html">
+            Ir a iniciar sesión
+          </a>
+        </p>
+
+      </div>
+
+    </section>
+
+  </main>
+<script>
+  window.lombanaInvitacionDesdeCorreo = (() => {
+    const parametros = new URLSearchParams(
+      window.location.hash.slice(1)
+    );
+
+    const query = new URLSearchParams(window.location.search);
+    return (parametros.get('type') === 'invite' && Boolean(parametros.get('access_token'))) ||
+           (query.get('type') === 'invite' && Boolean(query.get('token_hash'))) ||
+           (query.get('type') === 'invite' && Boolean(query.get('code')));
+  })();
+</script>
+  <!-- SUPABASE -->
+  <script src="js/vendor/supabase.bundle.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+
+  <script>
+    document.addEventListener(
+      'DOMContentLoaded',
+      async function () {
+
+        const estado = document.getElementById(
+          'estado-invitacion'
+        );
+
+        const formulario = document.getElementById(
+          'form-contrasena'
+        );
+
+        const mensaje = document.getElementById(
+          'mensaje-contrasena'
+        );
+
+        const boton = document.getElementById(
+          'btn-guardar-contrasena'
+        );
+
+        let autorizado = false;
+        if (!window.lombanaInvitacionDesdeCorreo) {
+  estado.textContent =
+    'Para activar una cuenta administrativa, ' +
+    'abre el enlace de invitación recibido por correo.';
+
+  formulario.hidden = true;
+  return;
+}
+
+        // Comprobar la sesión creada al aceptar el enlace de invitación.
+        try {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('token_hash') && params.get('type') === 'invite') {
+            const verificacion = await supabaseClient.auth.verifyOtp({
+              token_hash: params.get('token_hash'), type: 'invite'
+            });
+            if (verificacion.error) {
+              estado.textContent = 'El enlace de invitación no es válido o ya venció.';
+              return;
+            }
+          } else if (params.get('code') && params.get('type') === 'invite') {
+            const intercambio = await supabaseClient.auth.exchangeCodeForSession(params.get('code'));
+            if (intercambio.error) { estado.textContent = 'No fue posible verificar la invitación.'; return; }
+          }
+          // El cliente Supabase también procesa enlaces implícitos del fragmento #.
+          const { data, error } =
+            await supabaseClient.auth.getUser();
+
+          if (error || !data.user) {
+            estado.textContent =
+              'No se encontró una sesión válida. ' +
+              'Abre el enlace de invitación recibido ' +
+              'en tu correo electrónico.';
+            return;
+          }
+
+          // Comprobar que la cuenta invitada
+          // tenga realmente el rol de administrador.
+          const { data: perfil, error: errorPerfil } =
+            await supabaseClient
+              .from('profiles')
+              .select('rol')
+              .eq('id', data.user.id)
+              .maybeSingle();
+
+          if (errorPerfil || perfil?.rol !== 'admin') {
+            estado.textContent =
+              'Esta cuenta no tiene permisos ' +
+              'administrativos. Contacta al administrador.';
+            return;
+          }
+
+          // Eliminar parámetros temporales de
+          // autenticación de la barra de direcciones.
+          window.history.replaceState(
+            null,
+            '',
+            window.location.pathname
+          );
+
+          autorizado = true;
+          formulario.hidden = false;
+
+          estado.textContent =
+            'Sesión verificada. Ahora puedes ' +
+            'establecer tu contraseña.';
+
+        } catch (error) {
+          estado.textContent =
+            'No fue posible verificar la invitación.';
+          return;
+        }
+
+        formulario.addEventListener(
+          'submit',
+          async function (event) {
+
+            event.preventDefault();
+
+            if (!autorizado) return;
+
+            const password = document.getElementById(
+              'nueva-contrasena'
+            ).value;
+
+            const confirmacion = document.getElementById(
+              'confirmar-contrasena'
+            ).value;
+
+            if (password.length < 8) {
+              mensaje.textContent =
+                'La contraseña debe tener al menos 8 caracteres.';
+              return;
+            }
+
+            if (password !== confirmacion) {
+              mensaje.textContent =
+                'Las contraseñas no coinciden.';
+              return;
+            }
+
+            boton.disabled = true;
+            mensaje.textContent =
+              'Guardando contraseña...';
+
+            try {
+
+              const { error } =
+                await supabaseClient.auth.updateUser({
+                  password: password
+                });
+
+              if (error) {
+                mensaje.textContent =
+                  'No se pudo guardar la contraseña: ' +
+                  error.message;
+
+                boton.disabled = false;
+                return;
+              }
+
+              formulario.hidden = true;
+
+              const { error: salidaError } =
+                await supabaseClient.auth.signOut();
+
+              if (salidaError) {
+                mensaje.textContent =
+                  'Contraseña guardada. Cierra tu sesión ' +
+                  'antes de volver a iniciar sesión.';
+                return;
+              }
+
+              estado.textContent =
+                'Contraseña configurada correctamente.';
+
+              mensaje.textContent =
+                'Ya puedes iniciar sesión con tu correo ' +
+                'y tu nueva contraseña.';
+
+            } catch (error) {
+
+              mensaje.textContent =
+                'Ocurrió un problema al guardar ' +
+                'la contraseña.';
+
+              boton.disabled = false;
+            }
+
+          }
+        );
+
+      }
+    );
+  </script>
+
+  <script defer src="js/accesibilidad.js"></script>
+  <script defer src="js/chatbot.js"></script>
+</body>
+</html>

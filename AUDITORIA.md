@@ -1,33 +1,37 @@
-# Auditoría de Lombana Therapy — práctica Unidad 3
+# Auditoría — P1U3, Lombana Therapy
 
-**Alcance:** revisión estática del ZIP; no se ejecutaron conexiones reales ni se verificó la configuración externa del hosting y Supabase. Estados: ✅ resuelto en archivos; ⚠️ parcial/por confirmar; ❌ pendiente/no aplica como implementación propia.
+Fecha de preparación: 14/10/2026. Basada en inspección estática y doce pruebas automatizadas **aisladas**. No se pudo conectar a la instancia real de Supabase ni verificar GitHub, políticas RLS o pruebas manuales. `✅` implementado en código; `⚠️` implementación/evidencia pendiente; `❌` requiere decisión o trabajo externo.
 
-| # | Requisito | Estado tras revisión | Evidencia o acción |
-|---|---|---|---|
-| 1 | .gitignore para `.env` y dependencias | ✅ | `.gitignore` creado |
-| 2 | Secretos fuera del código | ⚠️ | `js/supabase.js` contiene valores **publicables**. Verificar que no haya secrets en repositorio/historial |
-| 3 | `.env.example` | ⚠️ | Incluido como plantilla; sitio estático no carga env automáticamente |
-| 4 | Endpoints claros | ❌ | No existen endpoints propios; se consume PostgREST de Supabase |
-| 5 | JSON uniforme | ❌ | Formato de respuestas lo controla Supabase; no hay proxy propio |
-| 6 | Validar entradas | ⚠️ | Registro validado en navegador; imprescindible reforzar en BD/RLS |
-| 7 | Códigos HTTP | ⚠️ | Los determina Supabase; no hay controladores propios |
-| 8 | Manejo central de errores | ⚠️ | Mensajes seguros en páginas corregidas; restantes scripts pendientes |
-| 9 | 404 API | ❌ | Resuelto por Supabase/hosting, no por esta web |
-| 10 | CORS restrictivo | ⚠️ | Revisar configuración en servicios reales y hosting |
-| 11 | Cabeceras seguridad | ⚠️ | Requiere hosting; no hay servidor configurable en ZIP |
-| 12 | HTML head completo | ✅ | Añadidos viewport y descriptions faltantes; lang ya existía |
-| 13 | Fuentes locales | ✅ | CSS usa Arial del sistema; no usa Google Fonts |
-| 14 | Página 404 | ⚠️ | Creado `404.html`; hosting debe dirigir los 404 hacia ella |
-| 15 | LICENSE | ❌ | No se asignó sin autorización de titulares |
-| 16 | README | ✅ | Archivo incluido con instrucciones reales |
-| 17 | Logs | ⚠️ | Consola del navegador y registros administrados por Supabase; no hay logs de backend propio |
-| 18 | Dependencias fijas | ⚠️ | Supabase CDN @2 sigue sin fijación exacta ni copia local |
+| # | Requisito de la práctica | Estado inicial del ZIP | Estado final de archivos preparados | Evidencia / siguiente acción |
+|---|---|---|---|---|
+| 1 | .gitignore excluye .env y dependencias | ✅ | ✅ | `.gitignore`; confirmar `git ls-files .env` local |
+| 2 | Datos sensibles fuera del código | ✅ clave publicable | ⚠️ | `.env` y `js/config.js`; revisar historial remoto; clave publicable no es secreto |
+| 3 | .env.example sin secretos | ✅ | ✅ | `.env.example`; `npm run build:config` |
+| 4 | Endpoints con nombres claros | ❌ | ✅ | `server.cjs` `/api/terapias`, `/api/citas`; frontend original aún usa Supabase directo |
+| 5 | Respuestas JSON uniformes | ❌ | ✅ | API local `ok`, `data`, `total`, `error` |
+| 6 | Validación de entradas | ⚠️ frontend | ⚠️ | Backend valida formato, tipo y límite 100 kB; revisar RLS, SQL y reglas de negocio reales |
+| 7 | Códigos HTTP adecuados | ⚠️ externo | ⚠️ | API envía 200/201/204/400/401/404/409/502/503; probar 409 con restricción BD |
+| 8 | Manejo centralizado de errores | ⚠️ | ✅ | `server.cjs` captura errores; detalle solo en log, no al usuario |
+| 9 | 404 de API controlado | ❌ | ✅ | GET `/api/no-existe` devuelve 404 JSON |
+| 10 | CORS restrictivo | ⚠️ | ✅ en servidor local | `.env` `ALLOWED_ORIGIN`; verificar con curl/buscador |
+| 11 | Cabeceras de seguridad | ⚠️ | ✅ básico | `server.cjs`; CSP con unsafe-inline por compatibilidad |
+| 12 | HTML head completo | ✅ parcial | ✅ | 8 HTML del ZIP; verificar metadatos en navegador |
+| 13 | Fuentes alojadas localmente | ✅ usa fuentes del sistema | ✅ | No necesita descargar Google Fonts |
+| 14 | Página 404 personalizada | ⚠️ archivo existente | ✅ servidor local | `404.html` entregado con estado 404; probar navegador |
+| 15 | LICENSE | ❌ | ❌ | Requiere autorización de titulares. `UNLICENSED` provisional |
+| 16 | README con instalación real | ⚠️ desactualizado | ✅ preparado | `README.md` nuevo; verificar por otra persona |
+| 17 | Logs de peticiones | ❌ sin API propia | ✅ servidor local | Método, ruta, código, tiempo; sin bodies ni tokens |
+| 18 | Versiones de dependencias fijadas | ✅ | ✅ | `package-lock.json`, bundle local |
 
-## Arreglos funcionales adicionales
-- `mis-citas.html`: se conecta a `js/mis-citas.js`, ya no a `js/agenda.js`.
-- Eliminado archivo duplicado `mis-citas.js` de la raíz.
-- `js/terapias.js` y `js/mis-citas.js`: los campos dinámicos se muestran con APIs DOM seguras (`textContent`), sin interpolar información de BD en `innerHTML`.
-- `js/auth.js`: validación básica de registro y redirecciones internas con lista permitida.
+## Evidencias externas pendientes
+- Capturas del funcionamiento real del frontend con Supabase: registro, sesión, catálogo, reservas, administración.
+- Resultados de 10 peticiones Postman/curl y capturas de HTTP, seguridad y CORS.
+- Revisar estructura real de BD, índice antirreservas duplicadas y RLS, y obtener aprobación para ejecutar SQL.
+- Elegir licencia y confirmación escrita del equipo.
+- Probar instalación en otra computadora siguiendo README.
+- Captura de rama de Git, commits, revisión y merge (no se incluyen en ZIP).
 
-## Pendientes de evidencias
-Probar pantalla inicial, registro, login, catálogo, horarios, creación/cancelación de cita y permisos del administrador en la instancia real. Adjuntar pruebas en `docs/PRUEBAS.md`. Crear rama y commits desde el repositorio Git original (un ZIP no incluye el historial Git).
+## Tres mejoras UI/UX detectadas (Bloque 9)
+1. Unificar mensajes de error de Supabase sin mostrar textos internos al paciente (pendiente de prueba manual).
+2. Agregar indicador de envío y deshabilitar doble clic en «Confirmar cita» mientras guarda (pendiente de implementación y prueba).
+3. Verificar contraste y estados de foco del menú hamburguesa en móvil con herramientas de accesibilidad (pendiente de prueba manual).

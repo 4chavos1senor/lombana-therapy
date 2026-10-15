@@ -29,10 +29,10 @@ async function registrarUsuario(event) {
         nombre: nombre,
         telefono: telefono,
         email: email,
-        genero: genero,
-        rol: 'paciente'
+        genero: genero
+        // Rol administrativo nunca se toma desde metadatos del cliente.
       },
-      emailRedirectTo: window.location.origin + '/login.html'
+      emailRedirectTo: new URL('login.html', window.location.href).href
     }
   });
 
@@ -41,24 +41,10 @@ async function registrarUsuario(event) {
     return;
   }
 
-  if (data.user) {
-  const { error: perfilError } = await supabaseClient
-    .from('profiles')
-    .upsert({
-      id: data.user.id,
-      email: email,
-      nombre: nombre,
-      telefono: telefono,
-      genero: genero,
-      rol: 'paciente'
-    });
-    if (perfilError) {
-      alert('Cuenta registrada, pero el perfil no pudo guardarse. Contacta al administrador.');
-      return;
-    }
-  }
+  // El perfil lo crea el trigger de auth.users. Nunca establecer roles desde JS.
+  // Si Supabase requiere confirmación de correo, puede no existir sesión todavía.
 
- alert('Cuenta creada exitosamente, favor de iniciar sesion.');
+  alert('Registro recibido. Si tu correo requiere verificación, confirma el mensaje antes de iniciar sesión.');
 const params = new URLSearchParams(window.location.search);
 const redirect = destinoLocalSeguro(params.get('redirect'));
 

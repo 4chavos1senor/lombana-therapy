@@ -70,11 +70,11 @@ async function cargarCitasAdmin() {
   const { data, error } = await query;
 
   if (error) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7">Error al cargar citas: ${error.message}</td>
-      </tr>
-    `;
+    tbody.replaceChildren();
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 7; td.textContent = 'No fue posible cargar citas. Verifica los permisos de acceso.';
+    tr.appendChild(td); tbody.appendChild(tr);
     return;
   }
 
@@ -91,28 +91,20 @@ async function cargarCitasAdmin() {
 
   data.forEach(cita => {
     const tr = document.createElement('tr');
-
-    tr.innerHTML = `
-      <td>${cita.fecha}</td>
-      <td>${formatearHora(cita.hora_inicio)}</td>
-      <td>${cita.therapies ? cita.therapies.nombre : 'Sin terapia'}</td>
-      <td>${cita.profiles ? cita.profiles.nombre : 'Sin paciente'}</td>
-      <td>${cita.profiles ? cita.profiles.telefono || '' : ''}</td>
-      <td>${cita.status}</td>
-      <td>
-        ${
-          normalizarTexto(cita.status || '') === 'cancelada'
-            ? '<span class="status-cancelada">Cancelada</span>'
-            : `
-              <button type="button" class="btn-danger" onclick="cancelarCita('${cita.id}')">
-                Cancelar cita
-              </button>
-            `
-        }
-      </td>
-    `;
-
-    tbody.appendChild(tr);
+    const add = value => { const td=document.createElement('td');td.textContent=String(value??'');tr.appendChild(td);return td; };
+    add(cita.fecha);
+    add(formatearHora(cita.hora_inicio));
+    add(cita.therapies?.nombre || 'Sin terapia');
+    add(cita.profiles?.nombre || 'Sin paciente');
+    add(cita.profiles?.telefono || '');
+    add(cita.status);
+    const acciones=document.createElement('td');
+    if(normalizarTexto(cita.status || '') === 'cancelada'){
+      const status=document.createElement('span');status.className='status-cancelada';status.textContent='Cancelada';acciones.appendChild(status);
+    } else {
+      const boton=document.createElement('button');boton.type='button';boton.className='btn-danger';boton.textContent='Cancelar cita';boton.addEventListener('click',()=>cancelarCita(cita.id));acciones.appendChild(boton);
+    }
+    tr.appendChild(acciones);tbody.appendChild(tr);
   });
 }
 
@@ -175,18 +167,11 @@ async function cargarPreciosTerapias() {
   contenedor.innerHTML = '';
 
   data.forEach(terapia => {
-    const div = document.createElement('div');
-    div.classList.add('precio-terapia-row');
-
-    div.innerHTML = `
-      <label>${terapia.nombre}</label>
-      <input type="text" id="precio-${terapia.id}" value="${terapia.precio || ''}">
-      <button type="button" onclick="actualizarPrecioTerapia('${terapia.id}')">
-        Guardar
-      </button>
-    `;
-
-    contenedor.appendChild(div);
+    const div = document.createElement('div');div.classList.add('precio-terapia-row');
+    const label=document.createElement('label');label.textContent=terapia.nombre||'Terapia';
+    const input=document.createElement('input');input.type='text';input.id=`precio-${terapia.id}`;input.value=terapia.precio||'';
+    const btn=document.createElement('button');btn.type='button';btn.textContent='Guardar';btn.addEventListener('click',()=>actualizarPrecioTerapia(terapia.id));
+    div.append(label,input,btn);contenedor.appendChild(div);
   });
 }
 
@@ -320,20 +305,10 @@ function mostrarCancelaciones(citasCanceladas) {
   tabla.innerHTML = '';
 
   citasCanceladas.forEach(cita => {
-    const fila = document.createElement('tr');
-
-    const paciente = cita.profiles?.nombre || 'Sin paciente';
-    const terapia = cita.therapies?.nombre || 'Sin terapia';
-    const hora = formatearHora(cita.hora_inicio);
-
-    fila.innerHTML = `
-      <td>${cita.fecha}</td>
-      <td>${hora}</td>
-      <td>${paciente}</td>
-      <td>${terapia}</td>
-      <td>${cita.status}</td>
-    `;
-
+    const fila=document.createElement('tr');
+    for(const valor of [cita.fecha,formatearHora(cita.hora_inicio),cita.profiles?.nombre||'Sin paciente',cita.therapies?.nombre||'Sin terapia',cita.status]){
+      const celda=document.createElement('td');celda.textContent=String(valor??'');fila.appendChild(celda);
+    }
     tabla.appendChild(fila);
   });
 }

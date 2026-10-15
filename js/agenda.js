@@ -106,7 +106,10 @@ async function cargarTerapiasAgenda() {
 
   if (error) {
     console.error('Error al cargar terapias:', error);
-    select.innerHTML = `<option value="">Error: ${error.message}</option>`;
+    select.replaceChildren();
+    const opcion = document.createElement('option');
+    opcion.value = ''; opcion.textContent = 'No fue posible cargar terapias.';
+    select.appendChild(opcion);
     return;
   }
 
@@ -118,7 +121,7 @@ async function cargarTerapiasAgenda() {
 
     option.value = terapia.id;
     option.dataset.slug = terapia.slug || obtenerSlug(terapia.nombre);
-    option.textContent = `${terapia.nombre} - $${terapia.precio || 400} MXN`;
+    option.textContent = `${terapia.nombre} - ${Number(terapia.precio) > 0 ? '$' + Number(terapia.precio).toFixed(2) + ' MXN' : 'Precio por confirmar'}`;
 
     select.appendChild(option);
   });
@@ -152,6 +155,8 @@ async function cargarHorariosDisponibles() {
   const fecha = fechaInput.value;
 
   horarioSeleccionado = null;
+  const estadoHorario = document.getElementById('horario-estado');
+  if (estadoHorario) estadoHorario.textContent = 'Ningún horario seleccionado.';
   contenedor.innerHTML = '';
 
   if (!fecha) {
@@ -186,21 +191,20 @@ async function cargarHorariosDisponibles() {
     return;
   }
 
-  const { data: citasExistentes, error } = await supabaseClient
-    .from('appointments')
-    .select('hora_inicio, status')
-    .eq('fecha', fecha)
-    .neq('status', 'cancelada');
+  // Fuente autoritativa de TODOS los horarios confirmados.
+  // Una consulta directa a appointments no basta: RLS puede ocultar las
+  // citas de los otros pacientes y mostrar un horario ocupado como libre.
+  const { data: intervalosOcupados, error } = await supabaseClient
+    .rpc('lt_horarios_ocupados', { p_fecha: fecha });
 
-  if (error) {
-    console.error('Error al consultar citas existentes:', error);
-    contenedor.innerHTML = `<p>Error al cargar horarios: ${error.message}</p>`;
+  if (error || !Array.isArray(intervalosOcupados)) {
+    console.error('Error al consultar disponibilidad global:', error);
+    contenedor.textContent = 'No se puede verificar la disponibilidad. Instala el SQL 03_agenda_un_terapeuta.sql en Supabase o vuelve a intentar.';
     return;
   }
-
-  const horasOcupadas = (citasExistentes || []).map(cita => {
-    return formatearHora(cita.hora_inicio);
-  });
+  const ocupado = horario => intervalosOcupados.some(
+    cita => LombanaHorarios.seSuperponen(cita, horario)
+  );
 
   contenedor.innerHTML = '';
 
@@ -209,10 +213,11 @@ async function cargarHorariosDisponibles() {
 
     button.type = 'button';
     button.classList.add('slot-btn');
+    button.setAttribute('aria-pressed', 'false');
 
     const horaInicioCorta = formatearHora(horario.hora_inicio);
 
-    if (horasOcupadas.includes(horaInicioCorta)) {
+    if (ocupado(horario)) {
       button.disabled = true;
       button.classList.add('slot-disabled');
       button.textContent = horaInicioCorta + ' - Ocupado';
@@ -228,7 +233,7 @@ async function cargarHorariosDisponibles() {
   });
 
   const horariosLibres = horariosVigentes.filter(horario => {
-    return !horasOcupadas.includes(formatearHora(horario.hora_inicio));
+    return !ocupado(horario);
   });
 
   if (horariosLibres.length === 0) {
@@ -275,10 +280,14 @@ function seleccionarHorario(horario, button) {
     btn.classList.remove('selected');
   });
 
+  document.querySelectorAll('.slot-btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  button.setAttribute('aria-pressed', 'true');
   button.classList.add('selected');
+  const estado = document.getElementById('horario-estado');
+  if (estado) estado.textContent = 'Horario seleccionado: ' + formatearHora(horario.hora_inicio);
 }
 
-async function confirmarCita() {
+async function reservarCitaDirecta() {
   const autorizado = await protegerAgenda();
 
   if (!autorizado) {
@@ -326,25 +335,9 @@ async function confirmarCita() {
     return;
   }
 
-  const { data: citaDuplicada, error: duplicadaError } = await supabaseClient
-    .from('appointments')
-    .select('id')
-    .eq('fecha', horarioSeleccionado.fecha)
-    .eq('hora_inicio', horarioSeleccionado.hora_inicio)
-    .neq('status', 'cancelada')
-    .maybeSingle();
-
-  if (duplicadaError) {
-    console.error('Error al validar horario:', duplicadaError);
-    alert('No se pudo validar el horario. Intenta de nuevo.');
-    return;
-  }
-
-  if (citaDuplicada) {
-    alert('Ese horario ya fue reservado. Selecciona otro horario.');
-    await cargarHorariosDisponibles();
-    return;
-  }
+  // La comprobacion final ocurre en PostgreSQL mediante el trigger
+  // trg_lt_evitar_empalmes y un bloqueo transaccional por fecha.
+  // No hacer SELECT + INSERT como sustituto: tiene una condicion de carrera.
 
   /*
     Se valida nuevamente justo antes de insertar,
@@ -357,7 +350,7 @@ async function confirmarCita() {
     return;
   }
 
-  const { error: citaError } = await supabaseClient
+  const { data: nuevaCita, error: citaError } = await supabaseClient
     .from('appointments')
     .insert({
       user_id: user.id,
@@ -367,23 +360,28 @@ async function confirmarCita() {
       hora_inicio: horarioSeleccionado.hora_inicio,
       hora_fin: horarioSeleccionado.hora_fin,
       status: 'confirmada'
-    });
+    })
+    .select('id')
+    .single();
 
   if (citaError) {
     console.error('Error al confirmar cita:', citaError);
-    alert('Error al confirmar la cita: ' + citaError.message);
+    if (citaError.code === '23P01' || /Horario ocupado|superpone/i.test(citaError.message || '')) {
+      alert('El horario fue ocupado por otra cita. Selecciona otro.');
+      await cargarHorariosDisponibles();
+    } else {
+      alert('No se pudo confirmar la cita: ' + citaError.message);
+    }
     return;
   }
 
-  alert(
-    'Cita confirmada para el día ' +
-    horarioSeleccionado.fecha +
-    ' en el horario ' +
-    formatearHora(horarioSeleccionado.hora_inicio) +
-    '.\n\nFavor de llegar 10 minutos antes de su cita.'
-  );
-
-  window.location.reload();
+  // Nunca mostrar confirmación sin un ID real persistido en Supabase.
+  if (!nuevaCita?.id) {
+    alert('La reserva pudo registrarse, pero no se pudo recuperar el folio. Revisa Mis citas.');
+    window.location.assign('mis-citas.html');
+    return;
+  }
+  window.location.assign('cita-confirmada.html?id=' + encodeURIComponent(nuevaCita.id));
 }
 
 function fechaEsAnteriorAHoy(fechaTexto) {
@@ -438,4 +436,79 @@ function formatearHora(hora) {
   }
 
   return hora.substring(0, 5);
+}
+
+// Se mantiene la reserva real original y se agregan las modalidades de "gali".
+let ltProcesando = false;
+function ltEstadoReserva(texto) {
+  const estado = document.getElementById('estado-reserva');
+  if (estado) estado.textContent = texto;
+}
+async function ltErrorFuncion(error, alternativo) {
+  try {
+    const respuesta = error?.context instanceof Response ? await error.context.clone().json() : null;
+    return respuesta?.error || error?.message || alternativo;
+  } catch { return error?.message || alternativo; }
+}
+async function confirmarCita() {
+  if (ltProcesando) return;
+  const metodo = document.querySelector('input[name="lt-forma-cita"]:checked')?.value || 'reserva';
+  if (metodo === 'reserva') {
+    ltProcesando=true;
+    const b=document.getElementById('btn-pagar');
+    if(b)b.disabled=true;
+    try { return await reservarCitaDirecta(); }
+    finally { ltProcesando=false; if(b)b.disabled=false; }
+  }
+  if (!(await protegerAgenda())) return;
+  const terapiaId = document.getElementById('terapia')?.value;
+  if (!terapiaId || !horarioSeleccionado) {
+    ltEstadoReserva('Selecciona una terapia, fecha y horario.'); return;
+  }
+  if (fechaEsAnteriorAHoy(horarioSeleccionado.fecha) || horarioYaPaso(horarioSeleccionado)) {
+    ltEstadoReserva('El horario ya pasó. Selecciona otro.'); return;
+  }
+  const boton = document.getElementById('btn-pagar');
+  ltProcesando = true;
+  if (boton) boton.disabled = true;
+  ltEstadoReserva('Procesando solicitud...');
+  try {
+    if (metodo === 'demo') {
+      const elegido = document.getElementById('terapia')?.selectedOptions?.[0]?.textContent?.trim();
+      const datos = {
+        folio: 'DEMO-' + Date.now().toString(36).toUpperCase(),
+        terapia: elegido || 'Terapia elegida',
+        fecha: horarioSeleccionado.fecha,
+        horario: horarioSeleccionado.hora_inicio.slice(0,5),
+        metodo: 'Simulación escolar — sin cobro ni reserva',
+        creado: new Date().toISOString()
+      };
+      sessionStorage.setItem('lombana_demo_cita',JSON.stringify(datos));
+      window.location.assign('cita-demo.html');
+      return;
+    }
+    const funcion = metodo === 'efectivo' ? 'cash-booking' : 'mp-checkout';
+    const {data,error} = await supabaseClient.functions.invoke(funcion,{
+      body:{therapy_id:String(terapiaId),fecha:horarioSeleccionado.fecha,hora_inicio:horarioSeleccionado.hora_inicio}
+    });
+    if (error || data?.error) {
+      ltEstadoReserva(await ltErrorFuncion(error, data?.error || 'No fue posible procesar la operación. Comprueba las funciones de Supabase.'));
+      return;
+    }
+    if (metodo === 'efectivo' && /^[0-9a-f-]{36}$/i.test(data?.appointment_id || '')) {
+      window.location.assign('cita-confirmada.html?id='+encodeURIComponent(data.appointment_id));
+    } else if (metodo === 'mercadopago' && /^https:\/\//i.test(data?.checkout_url || '') && /^[0-9a-f-]{36}$/i.test(data?.order_id || '')) {
+      const destino = new URL(data.checkout_url);
+      if (!['mercadopago.com','mercadopago.com.mx'].some(x=>destino.hostname===x||destino.hostname.endsWith('.'+x))) {
+        ltEstadoReserva('La URL de cobro no pertenece a Mercado Pago.'); return;
+      }
+      sessionStorage.setItem('lombana_payment_order_id',data.order_id);
+      window.location.assign(destino.href);
+    } else {
+      ltEstadoReserva('La respuesta del servidor no contiene datos válidos de confirmación.');
+    }
+  } catch (error) {
+    console.error('Error al agendar o pagar',error);
+    ltEstadoReserva('No se pudo procesar la operación. No se mostró una confirmación sin verificarla.');
+  } finally { ltProcesando = false; if(boton) boton.disabled = false; }
 }

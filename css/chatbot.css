@@ -1,0 +1,24 @@
+/* Chat flotante de Lombana Therapy */
+.lt-chat { position: fixed; right: 20px; bottom: 20px; z-index: 12000; font-family: inherit; }
+.lt-chat-toggle { display:flex; align-items:center; gap:8px; padding:12px 16px !important; background: #624332 !important; color:white !important; border:2px solid #624332 !important; border-radius:30px !important; box-shadow:0 3px 14px #0003; font-weight:700; }
+.lt-chat-panel { position:absolute; right:0; bottom:66px; width:min(370px, calc(100vw - 24px)); height:min(490px, calc(100dvh - 115px)); overflow:hidden; display:flex; flex-direction:column; background:var(--a-panel,#fff) !important; color:var(--a-text,#263238); border:2px solid var(--a-border,#75695e); border-radius:14px; box-shadow:0 8px 30px #0004; }
+.lt-chat-panel[hidden] { display:none !important; }
+.lt-chat-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#624332 !important; color:white !important; }
+.lt-chat-head div {display:flex; flex-direction:column; }
+.lt-chat-head strong, .lt-chat-head small {color:white !important;}
+.lt-chat-head small {font-size:12px;}
+.lt-chat-close {background:transparent !important; color:white !important; border:0 !important; font-size:26px !important; padding:0 5px !important;}
+.lt-chat-history {flex:1; min-height:0; overflow:auto; padding:12px; display:flex; flex-direction:column; gap:10px; }
+.lt-chat-message {padding:9px 11px; border-radius:11px; max-width:94%; background:var(--a-bg,#f7f4ef); border:1px solid var(--a-border,#75695e); overflow-wrap:anywhere;}
+.lt-chat-message.user {align-self:flex-end; background:#624332; color:white; }
+.lt-chat-message.user p {color:white !important;}
+.lt-chat-message.bot {align-self:flex-start;}
+.lt-chat-message p {margin:0 0 4px; font-size:14px;}
+.lt-chat-message a {display:inline-block; margin:5px 8px 2px 0; font-size:13px; font-weight:700; text-decoration:underline; }
+.lt-chat-topics {display:flex; gap:5px; flex-wrap:wrap; padding:6px 10px; border-top:1px solid var(--a-border,#75695e); }
+.lt-chat-topics button {font-size:12px !important; padding:5px 8px !important; border-radius:20px !important;}
+.lt-chat-form {display:flex; gap:7px; padding:10px; border-top:1px solid var(--a-border,#75695e);}
+.lt-chat-form input {flex:1; width:0; padding:9px !important; font-size:14px !important;}
+.lt-chat-form button {font-size:13px !important; padding:6px 10px !important;}
+.lt-chat-sr {position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;}
+@media (max-width: 480px) { .lt-chat {right:10px; bottom:10px;} .lt-chat-toggle {padding:10px 12px !important;} .lt-chat-panel {bottom:58px;} }

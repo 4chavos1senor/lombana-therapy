@@ -1,0 +1,432 @@
+/* Tema claro */
+:root {
+  --a-bg: #f7f4ef;
+  --a-panel: #ffffff;
+  --a-text: #263238;
+  --a-link: #624332;
+  --a-button: #624332;
+  --a-on: #ffffff;
+  --a-border: #75695e;
+  --a-focus: #005fcc;
+  color-scheme: light;
+}
+
+/* Modo nocturno */
+:root[data-theme="dark"] {
+  --a-bg: #121820;
+  --a-panel: #1e2935;
+  --a-text: #f5f7fa;
+  --a-link: #ffd6ad;
+  --a-button: #ffd6ad;
+  --a-on: #17212b;
+  --a-border: #a6b3c2;
+  --a-focus: #7dd3fc;
+  color-scheme: dark;
+}
+
+/* Alto contraste */
+:root[data-contrast="high"] {
+  --a-bg: #000000;
+  --a-panel: #000000;
+  --a-text: #ffffff;
+  --a-link: #ffff00;
+  --a-button: #ffff00;
+  --a-on: #000000;
+  --a-border: #ffffff;
+  --a-focus: #00ffff;
+  color-scheme: dark;
+}
+
+/* Escala de texto */
+html {
+  font-size: calc(100% * var(--a-scale, 1));
+  scroll-padding-top: 2rem;
+}
+
+body {
+  background: var(--a-bg);
+  color: var(--a-text);
+  line-height: 1.5;
+}
+
+body :is(h1, h2, h3, h4, p, label, li, td, strong, small, span) {
+  color: inherit;
+}
+
+body :is(
+  .header,
+  .header .nav,
+  .dropdown-content,
+  .card,
+  .detail-card,
+  .form-card,
+  .admin-box,
+  .admin-table,
+  .contact-section,
+  .footer,
+  .a11y-panel
+) {
+  background: var(--a-panel);
+  color: var(--a-text);
+}
+
+body :is(
+  .logo h1,
+  .logo p,
+  .section h2,
+  .card h3,
+  .detail-card h2,
+  .form-card h2,
+  .info-text,
+  .contact-subtitle,
+  .address-text
+) {
+  color: var(--a-text);
+}
+
+/* Enlaces identificables sin depender solamente del color */
+body a,
+body .header .nav a,
+body .header .nav .dropdown-content a {
+  color: var(--a-link) !important;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+body :is(
+  button,
+  .btn-primary,
+  .contact-btn,
+  .whatsapp-btn,
+  .facebook-btn
+) {
+  background: var(--a-button);
+  color: var(--a-on) !important;
+  border: 2px solid var(--a-button);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  height: auto;
+  white-space: normal;
+}
+
+body :is(.btn-danger, .btn-logout) {
+  background: #9b2020;
+  color: #ffffff !important;
+  border-color: #9b2020;
+}
+
+body .hamburger-btn {
+  background: transparent;
+  color: var(--a-text) !important;
+  border: 0;
+  padding: 6px;
+  width: 44px;
+  height: 44px;
+}
+
+body .hamburger-btn .bar {
+  flex-shrink: 0;
+}
+
+body :is(input, select, textarea) {
+  background: var(--a-panel);
+  color: var(--a-text);
+  border: 2px solid var(--a-border);
+  font: inherit;
+  padding: 0.65rem;
+  max-width: 100%;
+}
+
+body input::placeholder,
+body textarea::placeholder {
+  color: var(--a-text);
+  opacity: 0.8;
+}
+
+body :is(button:disabled, .slot-disabled) {
+  background: var(--a-panel);
+  color: var(--a-text) !important;
+  border: 2px dashed var(--a-border);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* Horarios: selección indicada mediante color, borde y texto */
+body .slot-btn {
+  background: var(--a-panel);
+  color: var(--a-link) !important;
+  border-color: var(--a-link);
+}
+
+body .slot-btn.selected {
+  background: var(--a-button);
+  color: var(--a-on) !important;
+  border-style: double;
+  border-width: 4px;
+}
+
+body .slot-btn.selected::after {
+  content: " ✓ Seleccionado";
+}
+
+body .admin-table th {
+  background: var(--a-button);
+  color: var(--a-on);
+}
+
+body :is(
+  .dropdown-content a:hover,
+  .dropdown-content a:focus-visible
+) {
+  background: var(--a-bg);
+}
+
+/* Fondo sólido para mantener legible el texto sobre la fotografía */
+body .hero-content {
+  background: var(--a-panel);
+  color: var(--a-text);
+  padding: 1.5rem;
+  border-radius: 1rem;
+}
+
+body .hero-content :is(h2, p) {
+  color: var(--a-text);
+}
+
+body :is(a, button):hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* Foco visible para navegación por teclado */
+:focus-visible {
+  outline: 3px solid var(--a-focus) !important;
+  outline-offset: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  transform: translateY(-250%);
+  z-index: 20000;
+  background: var(--a-panel);
+  padding: 1rem;
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+/* Submenú disponible al navegar con Tab */
+.dropdown:focus-within .dropdown-content {
+  display: block;
+}
+
+.dropdown-content {
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.oculto,
+[hidden] {
+  display: none !important;
+}
+
+/* Panel de accesibilidad */
+.a11y-panel {
+  margin: 1rem;
+  padding: 1rem;
+  border: 2px solid var(--a-border);
+  border-radius: 0.75rem;
+}
+
+.a11y-panel summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.a11y-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  align-items: center;
+}
+
+.a11y-caption {
+  border-left: 4px solid var(--a-border);
+  padding: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.a11y-panel button[aria-pressed="true"]::after {
+  content: " ✓ Activado";
+}
+
+/* Adaptación al crecimiento del texto */
+* {
+  min-width: 0;
+}
+
+body :is(p, h1, h2, h3, a, td, label) {
+  overflow-wrap: anywhere;
+}
+
+img,
+iframe {
+  max-width: 100%;
+}
+
+.header {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header .logo {
+  flex-shrink: 1;
+}
+
+.cards,
+.dashboard-grid {
+  grid-template-columns:
+    repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+body .contact-btn,
+body .whatsapp-btn,
+body .facebook-btn {
+  min-height: 3rem;
+  width: auto;
+  max-width: 100%;
+}
+
+.precio-terapia-row {
+  grid-template-columns:
+    repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+html[data-scale="2"] .hero {
+  flex-direction: column;
+  padding: 1.25rem;
+}
+
+html[data-scale="2"] .hero-logo-box {
+  flex: auto;
+  max-width: 100%;
+}
+
+html[data-scale="2"] .detail-card-wide {
+  grid-template-columns: 1fr;
+}
+
+html[data-scale="2"] :is(
+  .section,
+  .form-section,
+  .detail-content,
+  .card-body
+) {
+  padding: 1rem;
+}
+
+@media (max-width: 992px) {
+  body .header {
+    position: relative;
+  }
+
+  body .header .nav:not(.active) {
+    visibility: hidden;
+  }
+
+  body .header .nav {
+    width: min(24rem, 90vw);
+    max-width: 90vw;
+  }
+
+  body .header .nav.active {
+    visibility: visible;
+  }
+
+  body .header .dropdown-content {
+    background: var(--a-panel);
+  }
+
+  body .hamburger-btn {
+    position: relative;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* Botón con el símbolo de accesibilidad proporcionado. */
+.a11y-panel summary { display: inline-flex; align-items: center; gap: .75rem; list-style: none; min-height: 52px; }
+.a11y-panel summary::-webkit-details-marker { display: none; }
+.a11y-icon { width: 52px; height: 52px; object-fit: contain; border-radius: 50%; flex-shrink: 0; }
+.a11y-panel summary:focus-visible { outline: 3px solid var(--a-border); outline-offset: 5px; }
+#a-reader-help { flex-basis: 100%; margin: 0; }
+
+/* Panel compacto: no altera las funcionalidades existentes. */
+.a11y-panel { margin: .5rem 1rem; padding: .45rem .85rem; }
+.a11y-panel summary { min-height: 38px; gap: .5rem; }
+.a11y-icon { width: 32px; height: 32px; }
+.a11y-controls { gap: .5rem; margin: .65rem 0 .25rem; }
+.a11y-panel button { padding: .4rem .7rem; font-size: .9rem; }
+.a11y-panel select { padding: .35rem .5rem; }
+.a11y-panel label { font-size: .9rem; }
+.a11y-panel .a11y-caption { margin: .5rem 0; padding: .35rem .5rem; }
+.a11y-panel #a-feedback:empty { display: none; }
+.a11y-panel #a-feedback { margin: .35rem 0 0; font-size: .85rem; }
+.a11y-panel button[aria-pressed="true"]::after { content: " ✓"; }
+.a11y-sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Ícono de accesibilidad estilo contorno */
+.a11y-icon { background: transparent; border-radius: 0; }
+
+/* Menú pequeño de accesibilidad con desplegable tipo hamburguesa. */
+.a11y-panel {
+  position: fixed !important;
+  bottom: 18px; left: 18px; right: auto; top: auto;
+  z-index: 20050; width: fit-content; max-width: calc(100vw - 36px);
+  margin: 0 !important; padding: 0 !important;
+  background: transparent !important; border: 0 !important;
+  box-shadow: none;
+}
+.a11y-panel > summary {
+  box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+  gap: 7px; width: 78px; height: 46px; min-height: 46px; padding: 6px 10px;
+  border: 1px solid #624332; border-radius: 14px;
+  background: var(--a-panel, #fff); color: var(--a-text, #263238);
+  box-shadow: 0 4px 14px rgba(0,0,0,.16); list-style: none; cursor: pointer;
+}
+.a11y-panel > summary::-webkit-details-marker { display:none; }
+.a11y-panel .a11y-icon { width: 28px; height: 28px; border-radius:0; }
+.a11y-burger { display:flex; flex-direction:column; gap:4px; width:18px; flex-shrink:0; }
+.a11y-burger i { display:block; width:100%; height:2px; border-radius:2px; background:var(--a-link,#624332); }
+.a11y-panel[open] .a11y-burger i:first-child { transform:translateY(6px) rotate(45deg); }
+.a11y-panel[open] .a11y-burger i:nth-child(2) { opacity:0; }
+.a11y-panel[open] .a11y-burger i:last-child { transform:translateY(-6px) rotate(-45deg); }
+.a11y-dropdown {
+  position:absolute; bottom:calc(100% + 10px); left:0;
+  box-sizing:border-box; width: min(290px, calc(100vw - 36px));
+  max-height:min(490px, calc(100vh - 100px)); overflow-y:auto;
+  padding:14px; border:1px solid var(--a-border); border-radius:15px;
+  background:var(--a-panel); color:var(--a-text);
+  box-shadow:0 12px 32px rgba(0,0,0,.2);
+}
+.a11y-dropdown-title { display:block; margin-bottom:10px; font-size:1rem; }
+.a11y-panel .a11y-controls { display:grid; grid-template-columns:1fr; gap:8px; margin:0; }
+.a11y-panel .a11y-controls > button, .a11y-panel .a11y-controls > select { width:100%; text-align:left; }
+.a11y-panel .a11y-controls > label { margin-top:4px; }
+.a11y-panel > summary:focus-visible { outline:3px solid var(--a-focus) !important; outline-offset:3px; }
+@media(max-width:430px) { .a11y-panel { left:12px; bottom:12px; } }

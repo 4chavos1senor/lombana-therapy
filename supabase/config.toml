@@ -1,0 +1,11 @@
+[functions.mp-checkout]
+verify_jwt = false
+
+[functions.mp-webhook]
+verify_jwt = false
+
+[functions.cash-booking]
+verify_jwt = false
+
+[functions.invitar-administrador]
+verify_jwt = false

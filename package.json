@@ -1,13 +1,17 @@
 {
   "name": "lombana-therapy",
   "version": "1.0.0",
-  "description": "Sitio de terapias con catálogo, registro, inicio de sesión y agendamiento de citas.",
+  "description": "Lombana Therapy: interfaz Supabase y API HTTP local (Node.js).",
   "main": "index.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.cjs",
+    "dev": "node server.cjs",
+    "build:config": "node scripts/build-config.cjs",
+    "build:supabase": "node scripts/build-supabase.cjs",
+    "test": "node --test tests/api.test.cjs tests/horarios.test.cjs"
   },
   "repository": {
     "type": "git",
@@ -15,7 +19,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/Lombana97/lombana-therapy/issues"
@@ -27,5 +31,8 @@
   },
   "devDependencies": {
     "esbuild": "0.28.2"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

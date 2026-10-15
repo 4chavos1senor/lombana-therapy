@@ -27,6 +27,8 @@
 
   <!-- ESTILOS PRINCIPALES -->
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/accesibilidad.css">
+  <link rel="stylesheet" href="css/chatbot.css">
 </head>
 
 <body>
@@ -60,7 +62,7 @@
        CONTENIDO PRINCIPAL
   ================================== -->
 
-  <main id="contenido-principal">
+  <main id="contenido-principal" tabindex="-1">
 
     <!-- ==================================
          DASHBOARD DE CITAS
@@ -462,6 +464,84 @@
 
     </section>
 
+<!-- ==================================
+     GESTIÓN DE ADMINISTRADORES
+================================== -->
+
+<section class="section"
+         aria-labelledby="titulo-nuevo-admin">
+
+  <h2 id="titulo-nuevo-admin">
+    Gestión de administradores
+  </h2>
+
+  <div class="admin-box admin-form-box">
+
+    <h3>Invitar nuevo administrador</h3>
+
+    <p>
+      Envía una invitación para que otro administrador
+      pueda acceder al sistema Lombana Therapy.
+    </p>
+
+    <form id="form-invitar-admin">
+
+      <div class="admin-form-grid">
+
+        <div>
+          <label for="nuevo-admin-nombre">
+            Nombre completo
+          </label>
+
+          <input
+            type="text"
+            id="nuevo-admin-nombre"
+            minlength="2"
+            maxlength="100"
+            autocomplete="name"
+            required
+          >
+        </div>
+
+        <div>
+          <label for="nuevo-admin-email">
+            Correo electrónico
+          </label>
+
+          <input
+            type="email"
+            id="nuevo-admin-email"
+            autocomplete="email"
+            required
+          >
+        </div>
+
+      </div>
+
+      <div class="admin-actions">
+        <button
+          type="button"
+          id="btn-invitar-admin"
+          class="btn-primary"
+          disabled
+        >
+          Enviar invitación
+        </button>
+      </div>
+
+      <p id="mensaje-invitar-admin"
+         role="status"
+         aria-live="polite">
+        Las invitaciones estarán disponibles
+        después de completar la configuración.
+      </p>
+
+    </form>
+
+  </div>
+
+</section>
+
     <!-- ==================================
          GESTIÓN DE TERAPIAS
     ================================== -->
@@ -694,6 +774,10 @@
 
   <!-- ADMINISTRACIÓN -->
   <script src="js/admin.js"></script>
+  <script src="js/admin-gestion.js"></script>
+  <script src="js/verificar-admin-invitaciones.js"></script>
 
+  <script defer src="js/accesibilidad.js"></script>
+  <script defer src="js/chatbot.js"></script>
 </body>
 </html>

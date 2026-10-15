@@ -1,20 +1,48 @@
-# Pruebas pendientes (para realizar en local)
+# P1U3 — Lombana Therapy: resultados y evidencias de pruebas
 
-No se han ejecutado estas pruebas contra Supabase real. Registra **fecha, resultado y captura** por cada caso.
+**Fecha de ejecución:** 14 de octubre de 2026 (hora local de las capturas).  
+**Aplicación:** `http://127.0.0.1:3000` (Node.js, conexión a Supabase).  
+**Fuente:** capturas compartidas durante el trabajo de la práctica y resultado JSON facilitado por el alumno.  
+**Estado:** los 10 casos de Postman fueron ejecutados o reportados como exitosos; hay capturas directas de Postman en **8** casos. Los casos 1 y 3 necesitan, si el docente exige evidencia gráfica individual, una captura adicional de Postman. No se inventaron capturas.
 
-1. `index.html`: abre sin errores en Consola de Chrome.
-2. `terapias.html`: muestra catálogo; texto de nombres/descripciones se ve sin interpretar etiquetas HTML.
-3. `terapia-detalle.html?terapia=masaje-relajante`: detalle carga y conserva saltos de línea.
-4. `registro.html`: nombre corto/correo inválido/contraseña de menos de 8 caracteres se rechazan localmente.
-5. `login.html`: iniciar y cerrar sesión; prueba `?redirect=https://ejemplo.com` y confirma que **no** redirige a otros dominios.
-6. `mis-citas.html`: sin sesión lleva a login; con sesión muestra sus citas; prueba cancelación.
-7. `agendar.html`: una reserva válida; doble reserva del mismo horario por dos navegadores (requiere protección en BD).
-8. `admin.html`: con rol paciente se rechaza acceso; intenta consulta/modificación directa a Supabase y verifica RLS.
-9. `404.html`: abre como archivo; configura una ruta inválida en hosting y verifica HTTP 404 real.
-10. En DevTools → Network verifica errores y códigos HTTP para consultas a Supabase y cabeceras de seguridad.
+## Matriz de resultados del Bloque 11
 
-## Ejemplo de lectura de API sin datos privados
-Usa la consola Network del navegador para ver solicitudes reales a `/rest/v1/therapies` y sus cabeceras. Si usas curl, pon claves en variables de entorno locales y NO compartas tokens de sesión. Una petición a la API REST de Supabase no equivale a una API propia de Express.
+| N.º | Prueba | Método / ruta | Esperado | Resultado reportado/observado | Evidencia disponible |
+|---|---|---|---|---|---|
+| 01 | Listar terapias | GET `/api/terapias` | 200 | 200 en curl; JSON de Postman con `ok:true`, 9 terapias; no se adjuntó captura del estado HTTP en Postman | `01_GET_terapias_200_curl_evidencia_complementaria.png`, `01_GET_terapias_respuesta_Postman.json` |
+| 02 | Obtener terapia existente | GET `/api/terapias/masaje-relajante` | 200 | 200 OK; Test Results 1/1 | `02_GET_terapia_existente_200_Postman.png` |
+| 03 | Terapia inexistente | GET `/api/terapias/no-existe` | 404 | El alumno reportó 404; no adjuntó captura de esa petición Postman; existe evidencia equivalente de 404 de *otra* ruta API usando curl | `03_GET_ruta_inexistente_404_curl_evidencia_complementaria.png` |
+| 04 | Slug inválido | GET `/api/terapias/%21%21%21` | 400 | 400 Bad Request; Test Results 1/1; `VALIDACION` | `04_GET_slug_invalido_400_Postman.png` |
+| 05 | Crear cita con sesión | POST `/api/citas` | 201 | 201 Created; Test Results 1/1; fecha 2026-11-10 | `05_POST_crear_cita_201_Postman.png` |
+| 06 | Crear cita inválida | POST `/api/citas` | 400 | 400 Bad Request; Test Results 1/1; `VALIDACION` | `06_POST_cita_invalida_400_Postman.png` |
+| 07 | Actualizar cita propia | PUT `/api/citas/:id` | 200 | 200 OK; Test Results 1/1; `status:cancelada` | `07_PUT_actualizar_cita_200_Postman.png` |
+| 08 | Eliminar/cancelar lógicamente | DELETE `/api/citas/:id` | 204 | 204 No Content; Test Results 1/1 | `08_DELETE_cancelar_cita_204_Postman.png` |
+| 09 | Ruta API inexistente | GET `/api/xyz` | 404 | 404 Not Found; Test Results 1/1; `RUTA_NO_ENCONTRADA` | `09_GET_ruta_api_404_Postman.png` |
+| 10 | Proveedor externo caído (simulado) | GET `http://127.0.0.1:3001/api/terapias` | 503 | 503 Service Unavailable; Test Results 1/1; `PROVEEDOR_INDISPONIBLE` | `10_GET_proveedor_simulado_503_Postman.png` |
 
-## Evidencia de CORS
-Prueba un Origin permitido/no permitido contra el servicio correspondiente y consigna el resultado; recuerda que curl no aplica la política CORS del navegador.
+Las capturas están en `docs/evidencias-postman/`. **La prueba 10 usó un simulador local de fallo**, no una caída real del servicio Supabase. **La prueba 8 devolvió 204 y fue descrita como cancelación lógica**; un código 204 por sí solo no demuestra eliminación física de un registro.
+
+## Evidencias técnicas complementarias
+
+En `docs/evidencias-adicionales/` se incluyen capturas de:
+
+- `npm test`: 12 tests, 12 aprobados, 0 fallidos (mocks, no sustituyen pruebas reales).
+- `GET /api/salud`: HTTP 200 y cabeceras de seguridad.
+- `GET /api/citas` sin autenticación: HTTP 401.
+
+## Si el profesor solicita captura de Postman para cada caso
+
+Solo se recomienda tomar dos capturas adicionales, sin repetir las pruebas que modifican datos:
+
+1. **Prueba 01:** abrir `01 Listar terapias (200)`, pulsar **Send** y capturar la pantalla mostrando `200 OK`, `Test Results` y parte del JSON.
+2. **Prueba 03:** abrir `03 Terapia inexistente (404)`, pulsar **Send** y capturar `404 Not Found`, `Test Results` y el JSON del error.
+
+Ambas son solicitudes GET que no modifican citas. Guarda los archivos nuevos dentro de `docs/evidencias-postman/`.
+
+## Seguridad de la evidencia
+
+No incluir contraseñas, claves `sb_secret_`, JWT ni tokens de sesión en capturas, JSON exportado o GitHub. Al exportar la colección de Postman, elimina los tokens pegados en Authorization y desmarca o borra el valor de `sessionToken`. Revisa el JSON resultante antes de subirlo.
+
+## Otras pruebas que aún requieren evidencia
+
+Los resultados anteriores cubren **Bloque 11 (Postman)**, pero no cierran por sí solos los pendientes de RLS de Supabase, instalación limpia, licencia, roles, auditoría final ni todas las pruebas funcionales del frontend. Documentarlos por separado.
