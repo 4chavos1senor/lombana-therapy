@@ -1,43 +1,266 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
-const adminKey=()=>Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}').default;
-const hex=(array:ArrayBuffer)=>Array.from(new Uint8Array(array)).map(x=>x.toString(16).padStart(2,'0')).join('');
-async function signed(req:Request,id:string){
- const h=req.headers.get('x-signature')||'';const requestId=req.headers.get('x-request-id')||'';
- const ts=h.match(/(?:^|,)ts=([^,]+)/)?.[1];const v1=h.match(/(?:^|,)v1=([^,]+)/)?.[1];
- const secret=Deno.env.get('MERCADOPAGO_WEBHOOK_SECRET');if(!ts||!v1||!requestId||!secret)return false;
- if(Math.abs(Date.now()-Number(ts)*1000)>10*60_000)return false;
- const payload=`id:${id.toLowerCase()};request-id:${requestId};ts:${ts};`;
- const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
- const check=hex(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(payload)));
- return check.length===v1.length&&check.split('').reduce((ok,c,i)=>ok|(c.charCodeAt(0)^v1.charCodeAt(i)),0)===0;
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const responder = (mensaje: string, status = 200) =>
+  new Response(mensaje, { status });
+
+function claveServidor(): string {
+  const antigua = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (antigua) return antigua;
+
+  const claves = JSON.parse(
+    Deno.env.get("SUPABASE_SECRET_KEYS") || "{}"
+  );
+  return claves.default || "";
 }
-Deno.serve(async(req)=>{
- if(req.method!=='POST')return new Response('Method not allowed',{status:405});
- try {
- const incoming=new URL(req.url);const body=await req.json().catch(()=>({}));
- const paymentId=String(incoming.searchParams.get('data.id')||body?.data?.id||'');
- if(!/^\d+$/.test(paymentId))return new Response('Ignored',{status:200});
- if(!await signed(req,paymentId))return new Response('Unauthorized',{status:401});
- const token=Deno.env.get('MERCADOPAGO_ACCESS_TOKEN')!;
- const response=await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`,{headers:{Authorization:`Bearer ${token}`}});
- if(!response.ok)return new Response('Retry',{status:503});
- const payment=await response.json();const ref=payment.external_reference;
- if(!/^[0-9a-f-]{36}$/i.test(ref||''))return new Response('Ignored',{status:200});
- const admin=createClient(Deno.env.get('SUPABASE_URL')!,adminKey(),{auth:{persistSession:false}});
- const {data:order,error}=await admin.from('mp_orders').select('*').eq('id',ref).single();if(error||!order)return new Response('Unknown order',{status:200});
- if(String(payment.currency_id)!=='MXN'||Number(payment.transaction_amount)!==Number(order.amount))return new Response('Amount mismatch',{status:400});
- if(payment.status==='approved'){
-   if(order.status==='approved')return new Response('OK',{status:200});
-   if(order.status==='expired'||order.status==='failed'){await admin.from('mp_orders').update({status:'review',mp_payment_id:paymentId}).eq('id',order.id);return new Response('OK',{status:200});}
-   // Puede necesitar revisión si expiró o se ocupó durante una transición.
-   const {data:occupied}=await admin.from('appointments').select('id').eq('fecha',order.fecha).eq('hora_inicio',order.hora_inicio).neq('status','cancelada').limit(1);
-   if(occupied?.length){await admin.from('mp_orders').update({status:'review',mp_payment_id:paymentId}).eq('id',order.id);return new Response('OK',{status:200});}
-   const {data:appt,error:ae}=await admin.from('appointments').insert({user_id:order.user_id,therapy_id:order.therapy_id,slot_id:null,fecha:order.fecha,hora_inicio:order.hora_inicio,hora_fin:order.hora_fin,status:'confirmada'}).select('id').single();
-   if(ae){console.error(ae);await admin.from('mp_orders').update({status:'review',mp_payment_id:paymentId}).eq('id',order.id);return new Response('OK',{status:200});}
-   await admin.from('mp_orders').update({status:'approved',mp_payment_id:paymentId,appointment_id:appt.id}).eq('id',order.id);
- } else if(['rejected','cancelled','refunded','charged_back'].includes(payment.status)) {
-   await admin.from('mp_orders').update({status:payment.status==='refunded'?'refunded':'rejected',mp_payment_id:paymentId}).eq('id',order.id).neq('status','approved');
- }
- return new Response('OK',{status:200});
- } catch(e){console.error(e);return new Response('Retry',{status:500});}
+
+async function verificarFirma(
+  req: Request,
+  paymentId: string,
+  secreto: string
+): Promise<boolean> {
+  const firma = req.headers.get("x-signature") || "";
+  const requestId = req.headers.get("x-request-id") || "";
+
+  const valores = Object.fromEntries(
+    firma.split(",")
+      .map(x => x.trim().split("="))
+      .filter(x => x.length === 2)
+  );
+
+  const ts = valores.ts;
+  const v1 = valores.v1;
+
+  if (!ts || !requestId || !/^[0-9a-f]{64}$/i.test(v1 || "")) {
+    return false;
+  }
+
+  const fechaFirma = Number(ts) < 1e12
+    ? Number(ts) * 1000
+    : Number(ts);
+
+  if (
+    !Number.isFinite(fechaFirma) ||
+    Math.abs(Date.now() - fechaFirma) > 72 * 60 * 60 * 1000
+  ) {
+    return false;
+  }
+
+  const mensaje =
+    `id:${paymentId.toLowerCase()};` +
+    `request-id:${requestId};` +
+    `ts:${ts};`;
+
+  const llave = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secreto),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+
+  const bytes = new Uint8Array(
+    (v1.match(/.{2}/g) || []).map(x => parseInt(x, 16))
+  );
+
+  return crypto.subtle.verify(
+    "HMAC",
+    llave,
+    bytes,
+    new TextEncoder().encode(mensaje)
+  );
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method !== "POST") {
+    return responder("Metodo no permitido", 405);
+  }
+
+  try {
+    const secretoFirma = Deno.env.get(
+      "MERCADOPAGO_WEBHOOK_SECRET"
+    );
+    const tokenMP = Deno.env.get(
+      "MERCADOPAGO_ACCESS_TOKEN"
+    );
+    const url = Deno.env.get("SUPABASE_URL");
+    const serviceKey = claveServidor();
+
+    if (!secretoFirma || !tokenMP || !url || !serviceKey) {
+      console.error("Faltan secretos del servidor");
+      return responder("Configuracion pendiente", 503);
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const parametros = new URL(req.url).searchParams;
+
+    const tipo = parametros.get("type") || body?.type;
+    if (tipo && tipo !== "payment") {
+      return responder("Evento ignorado");
+    }
+
+    const paymentId = String(
+      parametros.get("data.id") ||
+      parametros.get("id") ||
+      body?.data?.id ||
+      ""
+    );
+
+    if (!/^\d{1,30}$/.test(paymentId)) {
+      return responder("Evento ignorado");
+    }
+
+    const firmaValida = await verificarFirma(
+      req,
+      paymentId,
+      secretoFirma
+    );
+
+    if (!firmaValida) {
+      console.error("Firma de Mercado Pago invalida");
+      return responder("Firma invalida", 401);
+    }
+
+    // Consultar el estado real directamente con Mercado Pago.
+    const respuestaMP = await fetch(
+      `https://api.mercadopago.com/v1/payments/${paymentId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${tokenMP}`
+        }
+      }
+    );
+
+    if (!respuestaMP.ok) {
+      console.error("Error consultando Mercado Pago", respuestaMP.status);
+      return responder("No se pudo verificar el pago", 503);
+    }
+
+    const pago = await respuestaMP.json();
+
+    const ordenId = String(pago.external_reference || "");
+
+    if (
+      !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(
+        ordenId
+      )
+    ) {
+      return responder("Orden desconocida");
+    }
+
+    const supabase = createClient(url, serviceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
+
+    const { data: orden, error: errorOrden } = await supabase
+      .from("mp_orders")
+      .select("*")
+      .eq("id", ordenId)
+      .maybeSingle();
+
+    if (errorOrden) {
+      console.error("Error consultando orden", errorOrden.message);
+      return responder("Error consultando orden", 503);
+    }
+
+    if (!orden) {
+      return responder("Orden no encontrada");
+    }
+
+    // Comprobar importe, moneda y preferencia de pago.
+    const importeCorrecto =
+      Number.isFinite(Number(pago.transaction_amount)) &&
+      Math.round(Number(pago.transaction_amount) * 100) ===
+        Math.round(Number(orden.amount) * 100);
+
+    const preferenciaCorrecta =
+      !orden.mp_preference_id ||
+      !pago.preference_id ||
+      String(orden.mp_preference_id) ===
+        String(pago.preference_id);
+
+    if (
+      pago.currency_id !== "MXN" ||
+      !importeCorrecto ||
+      !preferenciaCorrecta
+    ) {
+      console.error("El pago no coincide con la orden", orden.id);
+
+      if (orden.status === "pending") {
+        await supabase.from("mp_orders")
+          .update({
+            status: "review",
+            mp_payment_id: paymentId
+          })
+          .eq("id", orden.id)
+          .eq("status", "pending");
+      }
+
+      return responder("Pago enviado a revision");
+    }
+
+    if (pago.status === "approved") {
+      // La función SQL realizará ambas operaciones
+      // en una única transacción:
+      // 1. Confirmar la cita.
+      // 2. Vincular el pago aprobado con la cita.
+      const { data: resultado, error: errorConfirmacion } =
+        await supabase.rpc("lt_confirmar_pago_mp", {
+          p_order_id: orden.id,
+          p_payment_id: paymentId
+        });
+
+      if (errorConfirmacion) {
+        console.error(
+          "Error confirmando pago y cita",
+          errorConfirmacion.code,
+          errorConfirmacion.message
+        );
+
+        return responder("Confirmacion pendiente", 503);
+      }
+
+      console.info("Resultado de confirmacion:", resultado?.estado);
+      return responder("Notificacion procesada");
+    }
+
+    if (
+      ["rejected", "cancelled", "refunded", "charged_back"]
+        .includes(String(pago.status))
+    ) {
+      if (orden.status === "pending") {
+        const estado = pago.status === "refunded"
+          ? "refunded"
+          : "rejected";
+
+        const { error } = await supabase
+          .from("mp_orders")
+          .update({
+            status: estado,
+            mp_payment_id: paymentId
+          })
+          .eq("id", orden.id)
+          .eq("status", "pending");
+
+        if (error) {
+          console.error(error.message);
+          return responder("Actualizacion pendiente", 503);
+        }
+      } else if (orden.status === "approved") {
+        console.error(
+          "Pago previamente aprobado requiere revision:",
+          orden.id
+        );
+      }
+    }
+
+    return responder("Notificacion recibida");
+
+  } catch (error) {
+    console.error("Error en mp-webhook:", error);
+    return responder("Error interno", 500);
+  }
 });

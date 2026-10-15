@@ -1,40 +1,344 @@
-// Checkout Pro. Solo se usa la credencial secreta del lado servidor.
-import { createClient } from 'npm:@supabase/supabase-js@2';
-const cors = { 'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS' };
-const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers:{...cors,'Content-Type':'application/json'}});
-const adminKey=()=>Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}').default;
-Deno.serve(async(req)=>{
- if(req.method==='OPTIONS')return new Response(null,{headers:cors});
- if(req.method!=='POST')return json({error:'Método no permitido'},405);
- try {
- const url=Deno.env.get('SUPABASE_URL')!;
- const service=adminKey();const token=Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
- const site=Deno.env.get('PUBLIC_SITE_URL');const webhook=Deno.env.get('MP_WEBHOOK_URL');
- if(!service||!token||!site||!webhook)throw new Error('Faltan secretos del servidor: Mercado Pago / URL pública');
- const jwt=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'');if(!jwt)return json({error:'Inicia sesión'},401);
- const admin=createClient(url,service,{auth:{persistSession:false}});
- const {data:ud,error:ue}=await admin.auth.getUser(jwt);if(ue||!ud.user)return json({error:'Sesión inválida'},401);
- const {therapy_id,fecha,hora_inicio}=await req.json();
- if(typeof therapy_id!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(fecha)||!/^\d{2}:\d{2}:\d{2}$/.test(hora_inicio))return json({error:'Datos de la cita inválidos'},400);
- const {data:therapy,error:te}=await admin.from('therapies').select('id,nombre,precio,activo').eq('id',therapy_id).eq('activo',true).single();
- if(te||!therapy||!Number.isFinite(Number(therapy.precio))||Number(therapy.precio)<=0)return json({error:'No hay precio válido publicado para esta terapia'},400);
- const d=new Date(`${fecha}T${hora_inicio}-06:00`);if(!Number.isFinite(+d)||+d<=Date.now())return json({error:'El horario ya pasó'},400);
- const day=new Date(`${fecha}T12:00:00-06:00`).getUTCDay();const hour=Number(hora_inicio.slice(0,2));
- if(day===0||hour<9||hour>=(day===6?15:18)||hora_inicio.slice(3)!=='00:00')return json({error:'Horario fuera de atención'},400);
- const end=`${String(hour+1).padStart(2,'0')}:00:00`;
- // Libera únicamente órdenes sin pago después de 30 minutos; la confirmación real procede por webhook.
- await admin.from('mp_orders').update({status:'expired'}).eq('fecha',fecha).eq('hora_inicio',hora_inicio).eq('status','pending').lt('expires_at',new Date().toISOString());
- const {data:existing,error:ee}=await admin.from('appointments').select('id').eq('fecha',fecha).eq('hora_inicio',hora_inicio).neq('status','cancelada').limit(1);
- if(ee)throw ee;if(existing?.length)return json({error:'Horario ocupado, selecciona otro'},409);
- const {data:order,error:oe}=await admin.from('mp_orders').insert({user_id:ud.user.id,therapy_id:therapy.id,fecha,hora_inicio,hora_fin:end,amount:therapy.precio}).select('id').single();
- if(oe)return json({error:'Este horario está reservado temporalmente. Prueba con otro.'},409);
- const siteUrl = new URL(site.endsWith('/') ? site : site + '/');
- if(siteUrl.protocol!=='https:')throw new Error('PUBLIC_SITE_URL debe ser HTTPS público');
- const resultadoUrl=new URL('pago-resultado.html',siteUrl).href;
- const body={items:[{id:String(therapy.id),title:therapy.nombre,quantity:1,currency_id:'MXN',unit_price:Number(therapy.precio)}],external_reference:order.id,expires:true,expiration_date_from:new Date().toISOString(),expiration_date_to:new Date(Date.now()+30*60_000).toISOString(),back_urls:{success:resultadoUrl,pending:resultadoUrl,failure:resultadoUrl},notification_url:webhook,metadata:{order_id:order.id},payer:{email:ud.user.email}};
- const pref=await fetch('https://api.mercadopago.com/checkout/preferences',{method:'POST',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json','X-Idempotency-Key':order.id},body:JSON.stringify(body)});
- const out=await pref.json();if(!pref.ok||!out.init_point){await admin.from('mp_orders').update({status:'failed'}).eq('id',order.id);return json({error:'Mercado Pago no pudo crear el pago'},502)}
- await admin.from('mp_orders').update({mp_preference_id:out.id}).eq('id',order.id);
- return json({checkout_url:out.init_point,order_id:order.id});
- }catch(e){console.error(e);return json({error:'No se pudo iniciar el pago. Revisa la configuración del servidor.'},500)}
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-retry-count",
+  "Access-Control-Allow-Methods": "POST, OPTIONS"
+};
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...cors,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
+function serviceKey(): string {
+  const antigua = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (antigua) return antigua;
+
+  try {
+    const keys = JSON.parse(
+      Deno.env.get("SUPABASE_SECRET_KEYS") || "{}"
+    );
+    return keys.default || "";
+  } catch {
+    return "";
+  }
+}
+
+function fechaValida(fecha: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return false;
+  }
+
+  const d = new Date(`${fecha}T12:00:00Z`);
+
+  return !Number.isNaN(d.getTime()) &&
+    d.toISOString().slice(0, 10) === fecha;
+}
+
+function ahoraMexico(): string {
+  const f = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  });
+
+  const partes = Object.fromEntries(
+    f.formatToParts(new Date())
+      .filter(p => p.type !== "literal")
+      .map(p => [p.type, p.value])
+  );
+
+  return `${partes.year}-${partes.month}-${partes.day}` +
+    `T${partes.hour}:${partes.minute}`;
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: cors
+    });
+  }
+
+  if (req.method !== "POST") {
+    return json({ error: "Metodo no permitido." }, 405);
+  }
+
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = serviceKey();
+    const tokenMP = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+    const site = Deno.env.get("PUBLIC_SITE_URL");
+    const webhook = Deno.env.get("MP_WEBHOOK_URL");
+
+    if (!url || !key || !tokenMP || !site || !webhook) {
+      console.error("Faltan variables del servidor");
+      return json({
+        error: "Configuracion de pagos incompleta."
+      }, 503);
+    }
+
+    const authorization =
+      req.headers.get("authorization") || "";
+
+    const jwt = authorization
+      .match(/^Bearer\s+(.+)$/i)?.[1];
+
+    if (!jwt) {
+      return json({ error: "Debes iniciar sesion." }, 401);
+    }
+
+    const admin = createClient(url, key, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
+
+    const { data: auth, error: authError } =
+      await admin.auth.getUser(jwt);
+
+    if (authError || !auth.user) {
+      return json({
+        error: "Sesion invalida o expirada."
+      }, 401);
+    }
+
+    let body: Record<string, unknown>;
+
+    try {
+      body = await req.json();
+
+      if (!body || typeof body !== "object" ||
+          Array.isArray(body)) {
+        return json({ error: "Datos invalidos." }, 400);
+      }
+    } catch {
+      return json({ error: "JSON invalido." }, 400);
+    }
+
+    const therapyId = body.therapy_id;
+    const fecha = body.fecha;
+    const hora = body.hora_inicio;
+
+    if (
+      typeof therapyId !== "string" ||
+      !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i
+        .test(therapyId) ||
+      typeof fecha !== "string" ||
+      !fechaValida(fecha) ||
+      typeof hora !== "string" ||
+      !/^\d{2}:00(?::00)?$/.test(hora)
+    ) {
+      return json({
+        error: "Datos de la cita invalidos."
+      }, 400);
+    }
+
+    const numeroHora = Number(hora.slice(0, 2));
+    const horaSQL =
+      `${hora.slice(0, 2)}:00:00`;
+
+    const dia = new Date(
+      `${fecha}T12:00:00Z`
+    ).getUTCDay();
+
+    if (
+      dia === 0 ||
+      numeroHora < 9 ||
+      numeroHora >= (dia === 6 ? 15 : 18) ||
+      `${fecha}T${hora.slice(0, 5)}` <= ahoraMexico()
+    ) {
+      return json({
+        error: "Fecha u horario no disponible."
+      }, 400);
+    }
+
+    const { data: terapia, error: errorTerapia } =
+      await admin.from("therapies")
+        .select("id,nombre,precio,activo")
+        .eq("id", therapyId)
+        .eq("activo", true)
+        .maybeSingle();
+
+    if (errorTerapia || !terapia) {
+      return json({
+        error: "Terapia no disponible."
+      }, 400);
+    }
+
+    // La reserva temporal se crea atomicamente
+    // dentro de Supabase, no desde el navegador.
+    const { data: orden, error: errorOrden } =
+      await admin.rpc("lt_crear_orden_mp", {
+        p_user_id: auth.user.id,
+        p_therapy_id: therapyId,
+        p_fecha: fecha,
+        p_hora_inicio: horaSQL
+      });
+
+    if (errorOrden) {
+      console.error(
+        "Error reservando horario:",
+        errorOrden.code,
+        errorOrden.message
+      );
+
+      if (
+        errorOrden.code === "23P01" ||
+        errorOrden.code === "23505" ||
+        /ocupado|reservado|superpon/i.test(
+          errorOrden.message || ""
+        )
+      ) {
+        return json({
+          error: "Ese horario ya esta ocupado."
+        }, 409);
+      }
+
+      if (errorOrden.code === "22023") {
+        return json({
+          error: "Horario o precio invalido."
+        }, 400);
+      }
+
+      return json({
+        error: "No se pudo reservar temporalmente."
+      }, 503);
+    }
+
+    if (!orden?.order_id || !Number(orden.amount)) {
+      return json({
+        error: "Respuesta de reserva incompleta."
+      }, 500);
+    }
+
+    const orderId = String(orden.order_id);
+
+    const siteUrl = new URL(
+      site.endsWith("/") ? site : site + "/"
+    );
+    const webhookUrl = new URL(webhook);
+
+    if (
+      siteUrl.protocol !== "https:" ||
+      webhookUrl.protocol !== "https:"
+    ) {
+      return json({
+        error: "Las URL publicas deben utilizar HTTPS."
+      }, 503);
+    }
+
+    const resultadoUrl = new URL(
+      "pago-resultado.html",
+      siteUrl
+    ).href;
+
+    // La preferencia de pago corresponde
+    // a la orden reservada temporalmente.
+    const preferencia = {
+      items: [{
+        id: String(terapia.id),
+        title: String(terapia.nombre),
+        quantity: 1,
+        currency_id: "MXN",
+        unit_price: Number(orden.amount)
+      }],
+      external_reference: orderId,
+      expires: true,
+      expiration_date_from: new Date().toISOString(),
+      expiration_date_to:
+        new Date(Date.now() + 29 * 60_000).toISOString(),
+      back_urls: {
+        success: resultadoUrl,
+        pending: resultadoUrl,
+        failure: resultadoUrl
+      },
+      notification_url: webhookUrl.href,
+      metadata: {
+        order_id: orderId
+      },
+      payer: {
+        email: auth.user.email
+      }
+    };
+
+    const respuesta = await fetch(
+      "https://api.mercadopago.com/checkout/preferences",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${tokenMP}`,
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": orderId
+        },
+        body: JSON.stringify(preferencia)
+      }
+    );
+
+    const datosMP = await respuesta.json()
+      .catch(() => ({}));
+
+    if (
+      !respuesta.ok ||
+      typeof datosMP.init_point !== "string"
+    ) {
+      console.error(
+        "Error creando preferencia:",
+        respuesta.status,
+        datosMP
+      );
+
+      return json({
+        error:
+          "Mercado Pago no pudo iniciar el pago. " +
+          "La reserva temporal caducara automaticamente."
+      }, 502);
+    }
+
+    const { error: errorGuardar } =
+      await admin.from("mp_orders")
+        .update({
+          mp_preference_id: datosMP.id
+        })
+        .eq("id", orderId)
+        .eq("status", "pending");
+
+    if (errorGuardar) {
+      console.error(
+        "No se pudo guardar la preferencia:",
+        errorGuardar.message
+      );
+
+      return json({
+        error: "No se pudo completar la preparacion del pago."
+      }, 503);
+    }
+
+    // Se devuelve la URL; no se confirma la cita.
+    // La confirmacion se realizara mediante el webhook.
+    return json({
+      checkout_url: datosMP.init_point,
+      order_id: orderId
+    });
+
+  } catch (error) {
+    console.error("Error mp-checkout:", error);
+
+    return json({
+      error: "No se pudo iniciar el pago."
+    }, 500);
+  }
 });
