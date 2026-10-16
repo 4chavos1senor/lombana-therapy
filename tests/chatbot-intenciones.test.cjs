@@ -120,3 +120,14 @@ test('seguimiento de terapia sin inventar precio ni validar pagos', async () => 
   assert.match((await reply('¿Y cuánto dura?', { therapy: first.therapy })).text, /Duración: 60 minutos/);
   assert.match((await reply('Ya pagué, ¿está confirmada mi cita?')).text, /no puede comprobar pagos/);
 });
+
+
+test('precio y duración genéricos se responden juntos, sin inventar servicio a domicilio', async () => {
+  const both = await reply('¿Qué precio y duración tienen?');
+  assert.match(both.text, /Estos son los precios publicados/);
+  assert.match(both.text, /Estas son las duraciones publicadas/);
+  const home = await reply('¿Ofrecen terapias a domicilio?');
+  assert.match(home.text, /No tengo información publicada que confirme atención a domicilio/);
+  assert.doesNotMatch(home.text, /Nos encontramos en Av. del Rosal/);
+  assert.match((await reply('domicilio')).text, /Av. del Rosal/);
+});
