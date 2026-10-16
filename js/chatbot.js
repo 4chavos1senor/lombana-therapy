@@ -77,9 +77,11 @@
       text: '¡Hola! Soy el asistente de Lombana Therapy. Puedo ayudarte con terapias, precios, duración, horarios y citas.',
       links: [item('Ver terapias', 'terapias.html'), item('Agendar cita', 'agendar.html')]
     };
-    const location = has(s, ['ubicacion','ubicados','direccion','domicilio','donde estan',
+    const homeService = has(s, ['a domicilio','en domicilio']);
+    const location = has(s, ['ubicacion','ubicados','direccion','donde estan',
       'donde se encuentran','donde esta lombana','donde esta el consultorio',
-      'donde queda','donde quedan','por donde estan','como llegar','como llego','mapa','localizacion']);
+      'donde queda','donde quedan','por donde estan','como llegar','como llego','mapa','localizacion'])
+      || (has(s, ['domicilio']) && !homeService);
     const contact = has(s, ['whatsapp','whats','wats','watsap','telefono','contacto',
       'numero','celular','llamar','facebook','comunicar','correo','email']);
     const hours = has(s, ['horario','horarios','hora de atencion','a que hora',
@@ -120,6 +122,8 @@
         if (!links.some(l => l.text === link.text && l.url === link.url)) links.push(link);
       }
     }
+    if (homeService) add('No tengo información publicada que confirme atención a domicilio. Consulta directamente con Lombana Therapy antes de reservar esa modalidad.',
+      [item('Contacto','index.html#contacto')]);
     if (location) add('Nos encontramos en Av. del Rosal 30, Los Ángeles, Iztapalapa, 09837, Ciudad de México.',
       [item('Ver ubicación','index.html#ubicacion')]);
     if (contact) add('Puedes contactar a Lombana Therapy por WhatsApp o Facebook desde la sección de contacto. Para otros medios, consulta los datos publicados allí.',
@@ -140,7 +144,7 @@
     if (account) add('Puedes iniciar sesión o crear una cuenta desde las páginas correspondientes. Si tienes problemas de acceso, contacta al consultorio. Nunca compartas contraseñas en el chat.',
       [item('Iniciar sesión','login.html'),item('Registrarme','registro.html')]);
     let currentTherapy = null;
-    if (wantsPrice || wantsDuration || therapyTopic) {
+    if (wantsPrice || wantsDuration || (therapyTopic && !homeService)) {
       const data = await getTherapies();
       if (!data) add('No pude consultar el catálogo de terapias en este momento. Puedes revisar las terapias en la página o contactar directamente al consultorio. No quiero darte precios sin verificar.',
         [item('Ver terapias','terapias.html'),item('Contacto','index.html#contacto')]);
@@ -179,11 +183,11 @@
           if (wantsPrice) add('Estos son los precios publicados: ' +
             options.map(t => t.nombre + ': ' + price(t)).join('; ') + '.',
             [item('Ver todas las terapias','terapias.html')]);
-          else if (wantsDuration) add('Estas son las duraciones publicadas: ' +
+          if (wantsDuration) add('Estas son las duraciones publicadas: ' +
             options.map(t => t.nombre + ': ' +
               (t.duracion_minutos ? t.duracion_minutos + ' minutos' : 'duración no publicada')).join('; ') + '.',
             [item('Ver todas las terapias','terapias.html')]);
-          else add('Estas son las terapias disponibles' + (masajes ? ' relacionadas con masajes' : '') +
+          if (!wantsPrice && !wantsDuration) add('Estas son las terapias disponibles' + (masajes ? ' relacionadas con masajes' : '') +
             ': ' + options.map(t => t.nombre).join(', ') +
             '. Puedes preguntarme el precio, la duración o los detalles de una terapia específica.',
             [item('Ver terapias','terapias.html')]);
