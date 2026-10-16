@@ -43,16 +43,40 @@
   }
   const item = (text, url) => ({ text, url });
   async function reply(question) {
-    const s = normalize(question);
-    if (!s) return { text: 'Escribe una pregunta para ayudarte.' };
-    if (has(s, ['hola','buenas','buenos dias','buenas tardes','hey','que tal']) && s.length < 35) return { text: '¡Hola! Soy el asistente de Lombana Therapy. Puedo ayudarte con terapias, precios, duración, horarios y citas.', links: [item('Ver terapias', 'terapias.html'), item('Agendar cita', 'agendar.html')] };
+    const preguntaNormalizada = normalize(question);
+    if (!preguntaNormalizada) return { text: 'Escribe una pregunta para ayudarte.' };
+
+    // Un saludo al principio no debe ocultar la intención de la pregunta.
+    // Ejemplo: "Hola, citas" tiene que responder sobre citas, no solo saludar.
+    const s = preguntaNormalizada.replace(
+      /^(?:(?:hola|buenas|buenos dias|buenas tardes|buenas noches|hey|que tal)(?:\s+|$))+/,
+      ''
+    ).trim();
+    if (!s) return {
+      text: '¡Hola! Soy el asistente de Lombana Therapy. Puedo ayudarte con terapias, precios, duración, horarios y citas.',
+      links: [item('Ver terapias', 'terapias.html'), item('Agendar cita', 'agendar.html')]
+    };
     if (has(s, ['ubicacion','ubicados','direccion','donde estan','donde se encuentran','donde esta lombana','donde esta el consultorio','como llegar','mapa'])) return { text: 'Nos encontramos en Av. del Rosal 30, Los Ángeles, Iztapalapa, 09837, Ciudad de México.', links: [item('Ver ubicación', 'index.html#ubicacion')] };
     if (has(s, ['whatsapp','telefono','contacto','numero','llamar','facebook','comunicar'])) return { text: 'Puedes contactar a Lombana Therapy por WhatsApp o Facebook desde la sección de contacto.', links: [item('Ir a contacto','index.html#contacto'), item('WhatsApp','https://wa.me/525611676062')] };
     if (has(s, ['horario','horarios','hora de atencion','a que hora','cuando abren','cuando cierran','dias atienden','que dias','abren el sabado','atienden domingos','disponibilidad','disponibles','horas libres','citas libres','citas disponibles','tienen espacio'])) return { text: 'El horario de atención de Lombana Therapy es de lunes a viernes de 9:00 a 18:00 h y sábados de 9:00 a 15:00 h. Los domingos no hay atención. La disponibilidad de citas depende de la fecha seleccionada.', links: [item('Ver horarios disponibles', 'agendar.html')] };
     if (has(s, ['mis citas','mi cita','cancelar','reagendar','modificar cita','citas reservadas'])) return { text: 'Para consultar tus citas, entra a Mis citas. Algunas gestiones pueden requerir iniciar sesión. Si necesitas hacer cambios que no estén disponibles, contacta al consultorio.', links: [item('Mis citas', 'mis-citas.html'), item('Contacto', 'index.html#contacto')] };
-    if (has(s, ['agendar','reservar','sacar cita','hacer cita','quiero una cita','pedir cita'])) return { text: 'Para agendar, abre Agendar terapia, selecciona una terapia, elige fecha y un horario disponible y confirma la cita.', links: [item('Agendar terapia','agendar.html')] };
+    if (has(s, ['agendar','reservar','sacar cita','hacer cita','quiero una cita','pedir cita','solicitar cita','tomar cita','registrar una cita','registrar cita','registrar mi cita'])) return { text: 'Para agendar, abre Agendar terapia, selecciona una terapia, elige fecha y un horario disponible y confirma la cita.', links: [item('Agendar terapia','agendar.html')] };
     if (has(s, ['forma de pago','formas de pago','metodo de pago','metodos de pago','mercado pago','mercadopago','efectivo','tarjeta','transferencia','pagar','pago en establecimiento'])) return { text: 'En Lombana Therapy puedes reservar sin registrar un cobro, elegir pago pendiente en efectivo en el establecimiento, usar Mercado Pago o una simulación escolar. Los pagos electrónicos deben validarse antes de confirmar la cita. Nunca compartas datos bancarios en el chat.', links: [item('Ver opciones de reserva', 'agendar.html')] };
     if (has(s, ['iniciar sesion','registrarme','registrar','crear cuenta','contrasena','contraseña'])) return { text: 'Puedes iniciar sesión o crear una cuenta desde las páginas correspondientes.', links: [item('Iniciar sesión', 'login.html'), item('Registrarme', 'registro.html')] };
+
+    // Reconocer palabras sueltas y variaciones comunes, sin detectar falsos
+    // positivos dentro de otras palabras ("capacitacion", por ejemplo).
+    const preguntaPorCitas = /\b(?:cita|citas|sita|sitas|reservacion|reservaciones|turno|turnos)\b/.test(s);
+    const preguntaPorPrecioODuracion = has(s, [
+      'precio','precios','costo','costos','cuanto cuesta','cuanto vale',
+      'cuanto cobran','duracion','minutos','cuanto dura'
+    ]);
+    if (preguntaPorCitas && !preguntaPorPrecioODuracion) {
+      return {
+        text: 'En Lombana Therapy puedes agendar una cita desde la sección Agendar terapia: selecciona la terapia, fecha y un horario disponible. Si ya tienes una cita, entra a Mis citas para consultarla. Los espacios libres se verifican al elegir la fecha en la agenda.',
+        links: [item('Agendar cita', 'agendar.html'), item('Mis citas', 'mis-citas.html'), item('Ver horarios disponibles', 'agendar.html')]
+      };
+    }
     const wantsInfo = has(s, ['terapia','masaje','drenaje','reflexo','ventosa','quiro','aromaterapia','precio','costo','cuanto cuesta','cuanto vale','cuanto cobran','duracion','dura','minutos','servicio','tratamiento','ofrecen','hacen']);
     if (wantsInfo) {
       const data = await getTherapies();
@@ -60,9 +84,13 @@
       if (therapy) {
         const slug = therapy.slug || normalize(therapy.nombre).replace(/ /g,'-');
         const answer = [`${therapy.nombre}.`];
-        if (has(s,['precio','costo','cuanto cuesta','cuanto vale','cuanto cobran','vale','cuesta','cobran'])) answer.push(`Precio: ${price(therapy)}.`);
-        else if (has(s,['duracion','dura','minutos','tiempo'])) answer.push(therapy.duracion_minutos ? `Duración: ${therapy.duracion_minutos} minutos.` : 'La duración no está publicada.');
-        else {
+        const pidePrecio = has(s,['precio','costo','cuanto cuesta','cuanto vale','cuanto cobran','vale','cuesta','cobran']);
+        const pideDuracion = has(s,['duracion','dura','minutos','tiempo']);
+        // Responder las dos partes si preguntan precio Y duración.
+        if (pidePrecio || pideDuracion) {
+          if (pidePrecio) answer.push(`Precio: ${price(therapy)}.`);
+          if (pideDuracion) answer.push(therapy.duracion_minutos ? `Duración: ${therapy.duracion_minutos} minutos.` : 'La duración no está publicada.');
+        } else {
           if (therapy.descripcion) answer.push(String(therapy.descripcion).slice(0,350));
           answer.push(`Precio: ${price(therapy)}.`);
           if (therapy.duracion_minutos) answer.push(`Duración: ${therapy.duracion_minutos} minutos.`);
@@ -71,7 +99,7 @@
       }
       if (data && data.length) {
         const names = [...new Set(data.map(x => x.nombre).filter(Boolean))];
-        if (has(s,['precio','costos','cuanto cuestan','cuanto cuesta','precios'])) return { text: 'Estos son los precios publicados: ' + data.map(t => `${t.nombre}: ${price(t)}`).join('; ') + '.', links: [item('Ver todas las terapias','terapias.html')] };
+        if (has(s,['precio','costos','cuanto cuestan','cuanto cuesta','precios'])) return { text: 'Estos son los precios publicados: ' + data.map(t => `${t.nombre}: ${price(t)}`).join('; ') + '.', links: [item('Ver todas las terapias','terapias.html'), item('Agendar cita','agendar.html')] };
         return { text: 'Estas son las terapias disponibles: ' + names.join(', ') + '. Puedes preguntarme el precio, la duración o los detalles de una terapia específica.', links: [item('Ver terapias','terapias.html')] };
       }
       return { text: 'No pude consultar el catálogo de terapias en este momento. Puedes revisar las terapias en la página o contactar directamente al consultorio. No quiero darte precios sin verificar.', links: [item('Ver terapias','terapias.html'), item('Contacto','index.html#contacto')] };
