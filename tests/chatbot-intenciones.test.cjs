@@ -14,7 +14,9 @@ const therapies = [
   { nombre: 'Masaje relajante', slug: 'masaje-relajante',
     precio: '400', duracion_minutos: 60, descripcion: 'Masaje de relajación.' },
   { nombre: 'Drenaje linfático', slug: 'drenaje-linfatico',
-    precio: 'Precio a consultar', duracion_minutos: 45, descripcion: 'Drenaje.' }
+    precio: 'Precio a consultar', duracion_minutos: 45, descripcion: 'Drenaje.' },
+  { nombre: 'Masaje terapéutico', slug: 'masaje-terapeutico',
+    precio: '600', duracion_minutos: 50, descripcion: 'Masaje terapéutico.' }
 ];
 const sandbox = {
   document: { addEventListener() {} },
@@ -71,4 +73,50 @@ test('cuánto dura una terapia no se interpreta como pregunta de precio', async 
 test('no inventa precio descriptivo ni responde temas ajenos', async () => {
   assert.match((await reply('precio del drenaje linfático')).text, /Precio a consultar/);
   assert.match((await reply('capacitacion')).text, /Solo puedo responder preguntas referentes a Lombana Therapy/i);
+});
+
+
+test('pagos, WhatsApp abreviado y consultas de apertura', async () => {
+  assert.match((await reply('pago')).text, /Mercado Pago/);
+  assert.match((await reply('¿Tienen Whats?')).text, /WhatsApp/);
+  const hours = await reply('¿Abren hoy?');
+  assert.match(hours.text, /lunes a viernes de 9:00 a 18:00/);
+  assert.ok(hours.links.some(x => x.text === 'Ver horarios disponibles'));
+});
+
+test('no reconoce coincidencias dentro de otras palabras', async () => {
+  for (const q of ['¿Qué es un mapache?', '¿Qué significa antihorario?', '¿Cómo propagar una planta?']) {
+    assert.match((await reply(q)).text, /Solo puedo responder preguntas referentes/i, q);
+  }
+});
+
+test('multi-intenciones, negaciones y precios genéricos', async () => {
+  const a = await reply('¿Dónde están y cuáles son sus horarios?');
+  assert.match(a.text, /Av. del Rosal/);
+  assert.match(a.text, /lunes a viernes/);
+  const b = await reply('No quiero cancelar, quiero agendar.');
+  assert.match(b.text, /Para agendar/);
+  assert.doesNotMatch(b.text, /consultar tus citas/);
+  const c = await reply('No quiero saber el precio, quiero saber cuánto dura el masaje relajante');
+  assert.match(c.text, /Duración: 60 minutos/);
+  assert.doesNotMatch(c.text, /Precio:/);
+  assert.match((await reply('¿Cuánto vale?')).text, /Estos son los precios publicados/);
+});
+
+test('no elige arbitrariamente un masaje y reconoce dos terapias', async () => {
+  const all = await reply('¿Qué masajes tienen?');
+  assert.match(all.text, /Masaje relajante/);
+  assert.match(all.text, /Masaje terapéutico/);
+  assert.doesNotMatch(all.text, /Drenaje linfático/);
+  const both = await reply('¿Cuánto cuesta el masaje relajante y el terapéutico?');
+  assert.match(both.text, /Masaje relajante/);
+  assert.match(both.text, /Masaje terapéutico/);
+  assert.match(both.text, /400/);
+  assert.match(both.text, /600/);
+});
+
+test('seguimiento de terapia sin inventar precio ni validar pagos', async () => {
+  const first = await reply('¿Cuánto cuesta el masaje relajante?');
+  assert.match((await reply('¿Y cuánto dura?', { therapy: first.therapy })).text, /Duración: 60 minutos/);
+  assert.match((await reply('Ya pagué, ¿está confirmada mi cita?')).text, /no puede comprobar pagos/);
 });
