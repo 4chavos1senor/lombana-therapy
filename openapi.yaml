@@ -1,0 +1,233 @@
+
+openapi: 3.0.3
+
+info:
+  title: API de Lombana Therapy
+  description: >
+    Servicio web del proyecto integrador Lombana Therapy.
+    Permite consultar el estado del servidor y el
+    catalogo de terapias disponibles.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor local Docker Compose
+
+tags:
+  - name: Salud
+    description: Estado del servicio web
+  - name: Terapias
+    description: Consulta del catalogo de terapias
+
+paths:
+
+  /api/salud:
+    get:
+      tags:
+        - Salud
+      summary: Consultar el estado del servidor
+      operationId: consultarSalud
+      responses:
+        "200":
+          description: Servidor funcionando correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaSalud"
+
+
+  /api/db/salud:
+    get:
+      tags:
+        - Salud
+      summary: Consultar el estado de PostgreSQL local
+      description: >
+        Verifica la conexion del backend Node.js
+        con PostgreSQL local mediante una consulta
+        de solo lectura a docker_practice_status.
+        No modifica datos de pacientes ni Supabase.
+      operationId: consultarSaludPostgres
+      responses:
+        "200":
+          description: PostgreSQL disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      estado:
+                        type: string
+                        example: activo
+                      tabla:
+                        type: string
+                        example: docker_practice_status
+                      registros:
+                        type: integer
+                        example: 1
+        "503":
+          description: PostgreSQL local no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/terapias:
+    get:
+      tags:
+        - Terapias
+      summary: Listar terapias activas
+      operationId: listarTerapias
+      responses:
+        "200":
+          description: Lista de terapias activas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListaTerapias"
+
+        "502":
+          description: Error del proveedor de datos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+        "503":
+          description: Proveedor de datos no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/terapias/{slug}:
+    get:
+      tags:
+        - Terapias
+      summary: Consultar una terapia por su slug
+      operationId: obtenerTerapia
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Identificador de la terapia
+          schema:
+            type: string
+          example: masaje-relajante
+
+      responses:
+        "200":
+          description: Terapia encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespuestaTerapia"
+
+        "400":
+          description: Identificador de terapia invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+        "404":
+          description: Terapia no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+        "502":
+          description: Error del proveedor de datos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+        "503":
+          description: Proveedor de datos no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+
+    RespuestaSalud:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            servicio:
+              type: string
+              example: Lombana Therapy
+            estado:
+              type: string
+              example: activo
+
+    Terapia:
+      type: object
+      description: >
+        Datos de una terapia obtenidos de Supabase.
+        Pueden existir propiedades adicionales.
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+        slug:
+          type: string
+        precio:
+          type: string
+          description: Precio numerico o descriptivo
+
+    ListaTerapias:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Terapia"
+        total:
+          type: integer
+          example: 9
+
+    RespuestaTerapia:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/Terapia"
+
+    Error:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            codigo:
+              type: string
+              example: NO_ENCONTRADO
+            mensaje:
+              type: string
+              example: La terapia no existe

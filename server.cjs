@@ -7,6 +7,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { performance } = require('node:perf_hooks');
 const { readEnvironment } = require('./scripts/env.cjs');
+const { handleSwaggerDocs } = require('./scripts/swagger-docs.cjs');
+const { consultarSaludPostgres } = require('./scripts/postgresql.cjs');
 const ROOT = __dirname;
 const TYPES = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.webp':'image/webp', '.svg':'image/svg+xml', '.ico':'image/x-icon' };
 const BAD_ID = /^[a-z0-9][a-z0-9-]{0,99}$/i;
@@ -94,7 +96,27 @@ function createApp(cfg, injectedFetch = fetch) {
   async function handleApi(req,res,url) {
     const p=url.pathname;
     if(p==='/api/salud' && req.method==='GET'){sendJson(res,200,{ok:true,data:{servicio:'Lombana Therapy',estado:'activo'}});return;}
-    if(p==='/api/terapias' && req.method==='GET') {
+    // Estado de PostgreSQL local (solo lectura).
+    // No consulta ni modifica los datos de Supabase.
+    if (p === '/api/db/salud' && req.method === 'GET') {
+      try {
+        const datos = await consultarSaludPostgres(cfg);
+
+        sendJson(res, 200, {
+          ok: true,
+          data: datos
+        });
+      } catch (error) {
+        throw HttpError(
+          503,
+          'POSTGRESQL_NO_DISPONIBLE',
+          'No se pudo consultar PostgreSQL local'
+        );
+      }
+
+      return;
+    }
+if(p==='/api/terapias' && req.method==='GET') {
       const q=new URLSearchParams({select:'*',activo:'eq.true',order:'nombre.asc'});
       const data=await upstream('/rest/v1/therapies?'+q,{headers:restHeaders()});
       sendJson(res,200,{ok:true,data,total:data.length});return;
@@ -156,8 +178,17 @@ function createApp(cfg, injectedFetch = fetch) {
       url=new URL(req.url,'http://localhost');requestPath=url.pathname;
       secureHeaders(res,base.hostname);cors(req,res);
       if(req.method==='OPTIONS') {res.writeHead(204);res.end();return;}
-      if(url.pathname.startsWith('/api/'))await handleApi(req,res,url);
-      else await staticFile(req,res,url);
+      if (
+        url.pathname === '/api-docs' ||
+        url.pathname.startsWith('/api-docs/')
+      ) {
+        await handleSwaggerDocs(req, res, url);
+      } else if (url.pathname.startsWith('/api/')) {
+        await handleApi(req, res, url);
+      } else {
+        await staticFile(req, res, url);
+      }
+
     } catch(e) {
       // Nunca incluir contraseñas, cabeceras Authorization ni body en el log.
       console.error(`[${new Date().toISOString()}] error ${req.method} ${requestPath}: ${e.codigo||'INTERNO'} ${e.status||500}`);
@@ -169,11 +200,53 @@ function createApp(cfg, injectedFetch = fetch) {
     } finally {res.once('finish',()=>{});console.log(`${req.method} ${requestPath} ${res.statusCode} ${Math.round(performance.now()-start)} ms`);}
   };
 }
-function boot(){const cfg=readEnvironment(path.join(ROOT,'.env'));
- const required=['SUPABASE_URL','SUPABASE_PUBLISHABLE_KEY','ALLOWED_ORIGIN'];const missing=required.filter(k=>!cfg[k]||cfg[k].includes('TU_PROYECTO')||cfg[k].includes('TU_CLAVE'));
- if(missing.length)throw Error('Faltan variables de entorno: '+missing.join(', '));
- const port=Number(cfg.PORT||3000);if(!Number.isInteger(port)||port<1||port>65535)throw Error('PORT inválido');
- const httpServer=http.createServer(createApp(cfg));httpServer.listen(port,'127.0.0.1',()=>console.log(`Lombana Therapy: http://127.0.0.1:${port}`));return httpServer;
+
+function boot() {
+  const envFile = path.join(ROOT, '.env');
+
+  // En Windows, utiliza .env si existe.
+  // En Docker, acepta variables del entorno.
+  const cfg = fs.existsSync(envFile)
+    ? readEnvironment(envFile)
+    : { ...process.env };
+
+  const required = [
+    'SUPABASE_URL',
+    'SUPABASE_PUBLISHABLE_KEY',
+    'ALLOWED_ORIGIN'
+  ];
+
+  const missing = required.filter(
+    k => !cfg[k] ||
+      cfg[k].includes('TU_PROYECTO') ||
+      cfg[k].includes('TU_CLAVE')
+  );
+
+  if (missing.length) {
+    throw Error(
+      'Faltan variables de entorno: ' + missing.join(', ')
+    );
+  }
+
+  const port = Number(cfg.PORT || 3000);
+
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw Error('PORT inválido');
+  }
+
+  // Conservar localhost fuera de Docker.
+  // Docker utilizará HOST=0.0.0.0.
+  const host = cfg.HOST || '127.0.0.1';
+
+  const httpServer = http.createServer(createApp(cfg));
+
+  httpServer.listen(port, host, () => {
+    console.log(`Lombana Therapy: http://${host}:${port}`);
+  });
+
+  return httpServer;
 }
+
+
 if(require.main===module){try{boot();}catch(err){console.error('No se pudo iniciar:',err.message);process.exitCode=1;}}
 module.exports={createApp,boot};
