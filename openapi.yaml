@@ -35,6 +35,48 @@ paths:
               schema:
                 $ref: "#/components/schemas/RespuestaSalud"
 
+
+  /api/db/salud:
+    get:
+      tags:
+        - Salud
+      summary: Consultar el estado de PostgreSQL local
+      description: >
+        Verifica la conexion del backend Node.js
+        con PostgreSQL local mediante una consulta
+        de solo lectura a docker_practice_status.
+        No modifica datos de pacientes ni Supabase.
+      operationId: consultarSaludPostgres
+      responses:
+        "200":
+          description: PostgreSQL disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      estado:
+                        type: string
+                        example: activo
+                      tabla:
+                        type: string
+                        example: docker_practice_status
+                      registros:
+                        type: integer
+                        example: 1
+        "503":
+          description: PostgreSQL local no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /api/terapias:
     get:
       tags:

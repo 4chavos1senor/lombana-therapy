@@ -19,6 +19,8 @@ COPY js/ /usr/share/nginx/html/js/
 COPY assets/ /usr/share/nginx/html/assets/
 COPY *.jpg /usr/share/nginx/html/
 COPY *.png /usr/share/nginx/html/
+# Pagina independiente de demostracion PostgreSQL
+COPY docker-demo/verificacion-postgresql.html /usr/share/nginx/html/verificacion-postgresql.html
 
 # Puerto HTTP
 EXPOSE 80

@@ -45,3 +45,59 @@ Evidencia técnica comprobada en la Práctica 2
 - npm.cmd test: 36 pruebas aprobadas, cero fallidas, según la salida compartida; no son pruebas exhaustivas de producción.
 - Rama subida a GitHub con commits 02ed4ba y f99f87d. Pull Request #11 abierto en borrador, sin fusión a main.
 - Informe de evidencias: P2_Distribucion_Lombana_Therapy.pdf preparado con capturas del proceso.
+
+## Actualización de integración — 19/10/2026
+
+### Conexión entre frontend, API y PostgreSQL
+
+Se implementó y verificó una integración de demostración
+entre el frontend Nginx, el backend Node.js y PostgreSQL
+local mediante Docker Compose.
+
+**Componentes implementados:**
+
+- Controlador `pg` para Node.js.
+- Módulo `scripts/postgresql.cjs`.
+- Endpoint `GET /api/db/salud`.
+- Documentación OpenAPI 3.0.3 con cuatro endpoints.
+- Página `docker-demo/verificacion-postgresql.html`.
+- Pruebas automatizadas en `tests/postgresql.test.cjs`.
+
+**Resultados comprobados:**
+
+- Los tres contenedores Docker iniciaron correctamente.
+- PostgreSQL alcanzó el estado `healthy`.
+- `GET /api/db/salud` respondió HTTP 200.
+- La consulta devolvió un registro de
+  `docker_practice_status`.
+- Swagger UI ejecutó correctamente la nueva ruta.
+- La página de demostración consultó la API y mostró
+  los datos obtenidos de PostgreSQL.
+- CORS permitió el origen `http://localhost:8080`.
+- Se ejecutaron 39 pruebas automatizadas.
+- Aprobaron 39 pruebas, con 0 fallidas.
+- Se comprobó el manejo controlado de HTTP 503.
+
+### Alcance y limitaciones
+
+La integración utiliza una tabla local de demostración
+y realiza exclusivamente consultas de lectura.
+
+El sitio principal mantiene sus operaciones reales
+de autenticación, terapias, pacientes, citas y pagos
+a través de Supabase.
+
+No se migraron datos ni se modificaron registros reales
+de pacientes, reservaciones o pagos.
+
+Las pruebas automatizadas no equivalen a una validación
+integral de seguridad ni de producción.
+
+### Estado de publicación
+
+Los cambios de integración están preparados localmente
+en la rama `practica-distribucion`.
+
+Queda pendiente crear el commit de integración,
+actualizar el Pull Request #11, efectuar la revisión
+cruzada y decidir su fusión y publicación.

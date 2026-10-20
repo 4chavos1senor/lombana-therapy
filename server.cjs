@@ -8,6 +8,7 @@ const path = require('node:path');
 const { performance } = require('node:perf_hooks');
 const { readEnvironment } = require('./scripts/env.cjs');
 const { handleSwaggerDocs } = require('./scripts/swagger-docs.cjs');
+const { consultarSaludPostgres } = require('./scripts/postgresql.cjs');
 const ROOT = __dirname;
 const TYPES = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.webp':'image/webp', '.svg':'image/svg+xml', '.ico':'image/x-icon' };
 const BAD_ID = /^[a-z0-9][a-z0-9-]{0,99}$/i;
@@ -95,7 +96,27 @@ function createApp(cfg, injectedFetch = fetch) {
   async function handleApi(req,res,url) {
     const p=url.pathname;
     if(p==='/api/salud' && req.method==='GET'){sendJson(res,200,{ok:true,data:{servicio:'Lombana Therapy',estado:'activo'}});return;}
-    if(p==='/api/terapias' && req.method==='GET') {
+    // Estado de PostgreSQL local (solo lectura).
+    // No consulta ni modifica los datos de Supabase.
+    if (p === '/api/db/salud' && req.method === 'GET') {
+      try {
+        const datos = await consultarSaludPostgres(cfg);
+
+        sendJson(res, 200, {
+          ok: true,
+          data: datos
+        });
+      } catch (error) {
+        throw HttpError(
+          503,
+          'POSTGRESQL_NO_DISPONIBLE',
+          'No se pudo consultar PostgreSQL local'
+        );
+      }
+
+      return;
+    }
+if(p==='/api/terapias' && req.method==='GET') {
       const q=new URLSearchParams({select:'*',activo:'eq.true',order:'nombre.asc'});
       const data=await upstream('/rest/v1/therapies?'+q,{headers:restHeaders()});
       sendJson(res,200,{ok:true,data,total:data.length});return;

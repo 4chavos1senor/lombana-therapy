@@ -244,10 +244,13 @@ http://localhost:3000/api-docs
 Endpoints documentados:
 
 - GET /api/salud
+- GET /api/db/salud
 - GET /api/terapias
 - GET /api/terapias/{slug}
 
-Los tres endpoints se probaron desde Swagger UI utilizando Try it out y respondieron con HTTP 200.
+Los cuatro endpoints se comprobaron mediante Swagger UI y respondieron HTTP 200.
+
+GET /api/db/salud realiza una consulta de solo lectura a la tabla docker_practice_status de PostgreSQL local.
 
 ## Comandos de Docker Compose
 
@@ -301,3 +304,28 @@ El proyecto utiliza la licencia MIT.
 Copyright (c) 2026 Lombana.
 
 Consultar el archivo LICENSE para conocer los términos completos.
+
+### Integración PostgreSQL — Práctica 2
+
+Se implementó una conexión de demostración entre el frontend Nginx, la API Node.js y PostgreSQL local.
+
+La ruta GET /api/db/salud utiliza el controlador pg y consulta la tabla docker_practice_status mediante una operación de solo lectura.
+
+Se creó la página docker-demo/verificacion-postgresql.html, disponible en Docker en:
+
+http://localhost:8080/verificacion-postgresql.html
+
+Resultados comprobados:
+
+- Respuesta HTTP 200 desde Swagger UI.
+- Consulta correcta desde la página de demostración.
+- PostgreSQL en estado activo.
+- Un registro devuelto en la comprobación realizada.
+- 39 pruebas automatizadas aprobadas y 0 fallidas.
+- Manejo controlado de errores HTTP 503.
+
+La instalación independiente se comprobó mediante una clonación local en la misma computadora.
+
+Las operaciones reales de pacientes, citas y pagos continúan utilizando Supabase. Esta demostración no sustituye ni migra esos servicios.
+
+Permanecen pendientes la revisión cruzada, la aprobación del Pull Request y la publicación del Release.

@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+  <title>PostgreSQL - Lombana Therapy</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      color: #243447;
+      padding: 30px;
+    }
+
+    main {
+      max-width: 750px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px #00000015;
+    }
+
+    button {
+      background: #2463a8;
+      color: white;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    pre {
+      background: #edf2f7;
+      padding: 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Lombana Therapy</h1>
+
+    <h2>Verificación de PostgreSQL local</h2>
+
+    <p>
+      Esta página consulta el backend Node.js,
+      que se conecta a PostgreSQL mediante Docker.
+    </p>
+
+    <button id="consultar" type="button">
+      Consultar PostgreSQL
+    </button>
+
+    <p id="estado" role="status" aria-live="polite">
+      Esperando consulta.
+    </p>
+
+    <pre id="resultado">Sin resultados.</pre>
+  </main>
+
+  <script>
+    const boton = document.getElementById('consultar');
+    const estado = document.getElementById('estado');
+    const resultado = document.getElementById('resultado');
+
+    boton.addEventListener('click', async () => {
+      boton.disabled = true;
+      estado.textContent = 'Consultando PostgreSQL...';
+
+      try {
+        const respuesta = await fetch(
+          'http://localhost:3000/api/db/salud',
+          { cache: 'no-store' }
+        );
+
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok) {
+          throw new Error('HTTP ' + respuesta.status);
+        }
+
+        resultado.textContent =
+          JSON.stringify(datos, null, 2);
+
+        estado.textContent =
+          'Consulta realizada correctamente.';
+
+      } catch (error) {
+        estado.textContent =
+          'No fue posible consultar PostgreSQL.';
+
+        resultado.textContent = error.message;
+
+      } finally {
+        boton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
