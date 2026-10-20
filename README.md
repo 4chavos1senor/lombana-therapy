@@ -104,10 +104,200 @@ curl.exe -i http://127.0.0.1:3000/pagina-inexistente
 - El frontend aún se comunica directamente con Supabase; las rutas de Node quedan listas para demostración y transición posterior.
 
 ## Estado de licencia
-**Pendiente de aprobación por los titulares del proyecto.** `package.json` declara `UNLICENSED` para no otorgar derechos que no se han acordado; elegir MIT/GPL/AGPL, revisar recursos de terceros y solo entonces agregar el texto completo de `LICENSE`. Ver `docs/CONFIRMACIONES_NECESARIAS.md`.
+
+El proyecto Lombana Therapy utiliza la licencia MIT, autorizada por los titulares del proyecto.
+
+El archivo `LICENSE` contiene los términos completos de la licencia, correspondientes al año 2026.
+
+La licencia permite utilizar, modificar y distribuir el código bajo las condiciones establecidas en MIT. Los recursos de terceros conservan sus propias licencias cuando corresponda.
+
+La propiedad intelectual y los derechos de los autores se reconocen conforme al archivo `LICENSE`.
 
 ## Documentación de la práctica
 `AUDITORIA.md`, `docs/PRUEBAS.md`, `docs/POSTMAN_Lombana_Therapy.postman_collection.json`, `docs/CUESTIONARIO_BORRADOR.md`, `docs/SEGURIDAD_Y_PENDIENTES.md`, `docs/CONFIRMACIONES_NECESARIAS.md` y `supabase/REVISION_SQL.MD`.
 
 ## Git y cierre
 La rama y el historial **no viajan dentro del ZIP**. En tu copia Git original revisa `git status`, guarda commits en tu rama personal, solicita revisión del equipo y fusiona después de validar, **sin `push --force`** ni incluir `.env`.
+
+
+
+---
+
+# Práctica 2 — Distribución de servicios web
+
+## Descripción
+
+Lombana Therapy es un proyecto integrador de servicios web que permite consultar terapias, gestionar usuarios y realizar reservaciones.
+
+En esta práctica se implementó Docker para distribuir el proyecto mediante contenedores, Docker Compose para orquestar los servicios y OpenAPI con Swagger UI para documentar y probar la API REST.
+
+## Requisitos
+
+Para ejecutar el proyecto mediante Docker se necesita:
+
+- Docker Desktop o Docker Engine.
+- Docker Compose.
+- Git.
+- Acceso a una instancia compatible de Supabase para las funciones que dependen de ese servicio.
+
+Node.js no necesita instalarse manualmente cuando se utiliza Docker.
+
+## Instalación y ejecución con Docker
+
+1. Clonar el repositorio:
+
+```powershell
+git clone https://github.com/4chavos1senor/lombana-therapy.git
+```
+
+2. Entrar a la carpeta:
+
+```powershell
+cd lombana-therapy
+```
+
+3. Crear el archivo de configuración local:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+En Linux o macOS se puede utilizar:
+
+```bash
+cp .env.example .env
+```
+
+4. Abrir `.env` y configurar las variables necesarias, incluyendo los valores publicables de Supabase y una contraseña propia para PostgreSQL local.
+
+No utilizar claves secretas ni publicar el archivo `.env`.
+
+5. Construir e iniciar los contenedores:
+
+```powershell
+docker compose up --build
+```
+
+Docker Compose inicia los tres servicios definidos para la práctica.
+
+## Accesos
+
+Una vez que los contenedores estén funcionando:
+
+| Servicio | Dirección |
+|---|---|
+| Frontend | http://localhost:8080 |
+| Backend | http://localhost:3000 |
+| API de salud | http://localhost:3000/api/salud |
+| API de terapias | http://localhost:3000/api/terapias |
+| Swagger UI | http://localhost:3000/api-docs |
+
+## Arquitectura Docker
+
+El proyecto utiliza tres servicios:
+
+### Backend
+
+Servidor HTTP desarrollado con Node.js nativo. Proporciona los endpoints de la API REST y la documentación OpenAPI.
+
+### Frontend
+
+Servidor Nginx que publica las páginas HTML, estilos CSS, JavaScript e imágenes de Lombana Therapy.
+
+### Base de datos
+
+Contenedor PostgreSQL 16 utilizado como base local de práctica, con volumen persistente y comprobación de salud.
+
+Importante: el backend y el frontend actuales siguen utilizando Supabase para las operaciones existentes. PostgreSQL local está separado y todavía no sustituye ni integra la base de datos real de pacientes y reservaciones.
+
+## Variables de entorno
+
+| Variable | Descripción |
+|---|---|
+| APP_ENV | Entorno de ejecución |
+| PORT | Puerto del backend |
+| LOCAL_URL | Dirección local de referencia |
+| SUPABASE_URL | URL del proyecto Supabase |
+| SUPABASE_PUBLISHABLE_KEY | Clave publicable de Supabase |
+| ALLOWED_ORIGIN | Orígenes autorizados mediante CORS |
+| LOG_LEVEL | Configuración de registros |
+| DB_HOST | Nombre del servicio PostgreSQL |
+| DB_PORT | Puerto interno de PostgreSQL |
+| DB_NAME | Nombre de la base de datos local |
+| DB_USER | Usuario de PostgreSQL local |
+| DB_PASSWORD | Contraseña local de PostgreSQL |
+
+La variable HOST del backend se establece en Docker Compose como 0.0.0.0.
+
+El archivo `.env.example` contiene valores de ejemplo y debe adaptarse antes de ejecutar el proyecto. El archivo `.env` está excluido de Git.
+
+## Documentación de la API
+
+La documentación OpenAPI se encuentra en:
+
+openapi.yaml
+
+La interfaz Swagger UI está disponible en:
+
+http://localhost:3000/api-docs
+
+Endpoints documentados:
+
+- GET /api/salud
+- GET /api/terapias
+- GET /api/terapias/{slug}
+
+Los tres endpoints se probaron desde Swagger UI utilizando Try it out y respondieron con HTTP 200.
+
+## Comandos de Docker Compose
+
+Consultar los servicios activos:
+
+```powershell
+docker compose ps
+```
+
+Consultar los registros del backend:
+
+```powershell
+docker compose logs -f backend
+```
+
+Detener los contenedores:
+
+```powershell
+docker compose down
+```
+
+Iniciar en segundo plano:
+
+```powershell
+docker compose up -d
+```
+
+El comando docker compose down -v elimina también los volúmenes locales. No debe utilizarse si se desea conservar la información de PostgreSQL.
+
+## Pruebas realizadas
+
+- Construcción de imagen Docker del backend.
+- Ejecución aislada del contenedor.
+- Inicio de tres servicios mediante Docker Compose.
+- Verificación de PostgreSQL en estado healthy.
+- Comprobación del frontend y la página 404 personalizada.
+- Ejecución de 36 pruebas automatizadas, con 0 fallidas.
+- Pruebas de tres endpoints mediante Swagger UI.
+- Validación visual de OpenAPI mediante Swagger Editor.
+
+Pendiente antes de la entrega final: validar una clonación completamente limpia y resolver las diferencias de integración señaladas anteriormente.
+
+## Integrantes del equipo
+
+- Vargas Lombana Federico, Soto Cuevas Erick, Navarro Martínez Maximiliano, Utrera Robles Galilea, Emeterio Anaya Yamil
+
+## Licencia
+
+El proyecto utiliza la licencia MIT.
+
+Copyright (c) 2026 Lombana.
+
+Consultar el archivo LICENSE para conocer los términos completos.

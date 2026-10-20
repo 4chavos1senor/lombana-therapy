@@ -1,0 +1,20 @@
+
+# Dependencias instaladas localmente
+node_modules/
+
+# Configuraciones privadas
+.env
+.env.*
+!.env.example
+
+# Archivos de Git
+.git
+.gitignore
+
+# Registros de errores
+npm-debug.log*
+
+# Archivos temporales y de pruebas
+coverage/
+*.tmp
+*.log
