@@ -16,7 +16,7 @@
   const TIMEOUT_MS = TIMEOUT_MINUTOS * 60 * 1000;
 
   // Mantener desactivado hasta completar pruebas.
-  const TIMEOUT_ACTIVO = window.LOMBANA_CONFIG?.security?.sessionTimeoutEnabled === true;
+  const TIMEOUT_ACTIVO = typeof window !== 'undefined' && window.LOMBANA_CONFIG?.security?.sessionTimeoutEnabled === true;
 
   const PREFIJO = 'lombana_ultima_actividad_v2_';
 
