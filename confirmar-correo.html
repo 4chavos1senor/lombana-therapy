@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Confirmar correo | Lombana Therapy</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="form-section" id="contenido-principal">
+    <section class="form-card" aria-labelledby="titulo-confirmacion">
+      <h1 id="titulo-confirmacion">Lombana Therapy</h1>
+      <h2>Confirma tu correo electrónico</h2>
+      <p>
+        Para proteger tu cuenta, pulsa el botón para completar la
+        confirmación. El enlace solo puede utilizarse una vez.
+      </p>
+      <button type="button" id="btn-confirmar-correo" class="btn-primary" disabled>
+        Confirmar mi correo
+      </button>
+      <p id="estado-confirmacion" role="status" aria-live="polite">
+        Comprobando el enlace...
+      </p>
+      <p><a href="login.html">Volver a iniciar sesión</a></p>
+      <p><a href="reenviar-confirmacion.html">Solicitar otro enlace</a></p>
+    </section>
+  </main>
+  <script src="js/vendor/supabase.bundle.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/confirmar-correo.js"></script>
+</body>
+</html>
