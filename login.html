@@ -231,6 +231,7 @@
     <section class="form-section">
       <form class="form-card" onsubmit="iniciarSesion(event)">
         <h2>Iniciar sesión</h2>
+        <p id="aviso-timeout-login" role="status" aria-live="polite" hidden></p>
 
         <label for="email">Correo electrónico</label>
         <input type="email" id="email" autocomplete="username" required>
@@ -242,7 +243,8 @@
         <div id="contenedor-captcha" hidden></div>
         <p id="mensaje-captcha" role="status" aria-live="polite" hidden></p>
 
-        <button type="submit" class="btn-primary">Entrar</button>
+        <p id="aviso-bloqueo-login" role="alert" aria-live="assertive" hidden></p>
+        <button type="submit" class="btn-primary" id="btn-entrar">Entrar</button>
 
 <p class="form-link">O inicia sesión con:</p>
 
@@ -281,11 +283,22 @@
   <script src="js/vendor/supabase.bundle.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
+  <script src="js/session-timeout.js"></script>
   <script src="js/turnstile.js"></script>
+  <script src="js/mfa.js"></script>
+  <script src="js/login-lockout.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/terapias.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
+    if (params.get('motivo') === 'inactividad') {
+      const aviso = document.getElementById('aviso-timeout-login');
+      if (aviso) {
+        aviso.textContent =
+          'Tu sesión se cerró automáticamente tras 30 segundos sin actividad.';
+        aviso.hidden = false;
+      }
+    }
     const redirect = params.get('redirect');
     const linkRegistro = document.getElementById('link-registro');
 

@@ -18,6 +18,18 @@ async function protegerAdmin() {
 
   const user = sessionData.session.user;
 
+  if (window.LombanaMFA?.estaActivo?.()) {
+    try {
+      if (await window.LombanaMFA.requiereVerificacion()) {
+        window.location.replace('verificar-2fa.html?redirect=admin.html');
+        return false;
+      }
+    } catch (_) {
+      alert('No se pudo validar el segundo factor. Inténtalo nuevamente.');
+      return false;
+    }
+  }
+
   const { data: perfil, error } = await supabaseClient
     .from('profiles')
     .select('rol')

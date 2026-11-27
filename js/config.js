@@ -2,5 +2,11 @@
    Nunca incluir contraseñas, tokens ni credenciales privadas. */
 window.LOMBANA_CONFIG = Object.freeze({
   supabaseUrl: "https://pqeqarxybindwbgsbdlq.supabase.co",
-  supabasePublishableKey: "sb_publishable_bh_S678j3018LiFEUpNWJg_4fRZGPD3"
+  supabasePublishableKey: "sb_publishable_bh_S678j3018LiFEUpNWJg_4fRZGPD3",
+  security: {
+    captchaEnabled: false,
+    turnstileSiteKey: '',
+    mfaEnabled: false,
+    sessionTimeoutEnabled: true
+  }
 });

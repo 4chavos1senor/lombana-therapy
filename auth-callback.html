@@ -24,6 +24,7 @@
   <script src="js/vendor/supabase.bundle.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
+  <script src="js/mfa.js"></script>
   <script src="js/auth.js"></script>
 
   <script>
@@ -57,22 +58,21 @@
           throw new Error('Perfil no disponible');
         }
 
-        if (perfil.rol === 'admin') {
-          window.location.replace('admin.html');
+        const params = new URLSearchParams(window.location.search);
+        const destinoSolicitado = destinoLocalSeguro(params.get('redirect'));
+        const destino = perfil.rol === 'admin'
+          ? 'admin.html'
+          : (destinoSolicitado || 'index.html');
+
+        const mfa = window.LombanaMFA;
+        if (mfa?.estaActivo?.() && await mfa.requiereVerificacion()) {
+          window.location.replace(
+            'verificar-2fa.html?redirect=' + encodeURIComponent(destino)
+          );
           return;
         }
 
-        const params = new URLSearchParams(
-          window.location.search
-        );
-
-        const destino = destinoLocalSeguro(
-          params.get('redirect')
-        );
-
-        window.location.replace(
-          destino || 'index.html'
-        );
+        window.location.replace(destino);
       } catch (error) {
         console.error('No se completó la autenticación');
         estado.textContent =
