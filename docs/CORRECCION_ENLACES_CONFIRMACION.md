@@ -74,3 +74,19 @@ enlaces para esa cuenta.
 No se han modificado cuentas, datos clínicos, citas, pagos,
 roles, RLS, políticas de Auth ni ajustes SMTP.
 Esta corrección requiere publicación y cambio manual de la plantilla.
+
+
+## Mejora de mensajes y redirecciones (27/11/2026)
+
+- Si Supabase devuelve éxito al verificar el token, la página presenta
+  **«¡Cuenta ya verificada!»**.
+- Si el token es inválido, ya usado o venció, **no se afirma** que
+  la cuenta se confirmó sin pruebas: se explica que puede iniciar sesión
+  si ya la verificó y se ofrece solicitar otro enlace si no.
+- Se fija el retorno de registro y reenvío al login público:
+  `https://4chavos1senor.github.io/lombana-therapy/login.html`, en lugar de generar enlaces a `127.0.0.1` desde Live Server.
+- Los enlaces enviados **antes** de estos cambios conservan la URL anterior:
+  no se pueden alterar retroactivamente. No es necesario confirmar
+  de nuevo una cuenta que Supabase ya haya verificado.
+- La plantilla activa «Confirm sign up» de Supabase debe seguir usando
+  `confirmar-correo.html?token_hash={{ .TokenHash }}`, con la URL pública.
