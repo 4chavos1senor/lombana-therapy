@@ -3,9 +3,11 @@ on:
   pull_request:
     branches:
       - feat/autenticacion-google-mfa
+      - feat/u4-security-integracion-segura
   push:
     branches:
       - feat/u4-security-integracion-segura
+      - fix/u4-confirmacion-bloqueo-progresivo
 
 permissions:
   contents: read
@@ -25,6 +27,7 @@ jobs:
       - name: Verificar sintaxis
         run: |
           node --check js/auth.js
+          node --check js/login-lockout.js
           node --check js/turnstile.js
           node --check js/session-timeout.js
           node --check js/mfa.js

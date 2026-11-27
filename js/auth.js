@@ -75,6 +75,14 @@ async function iniciarSesion(event) {
 const email = document.getElementById('email').value.trim();
 const password = document.getElementById('password').value;
 
+// Bloqueo progresivo LOCAL (no reemplaza controles de Supabase Auth).
+const bloqueoLocal = window.LombanaLoginLockout;
+const estadoBloqueo = bloqueoLocal?.estado(email);
+if (estadoBloqueo?.bloqueado) {
+  bloqueoLocal.refrescar();
+  return;
+}
+
 // Consultar el módulo CAPTCHA si está disponible.
 const captcha = window.LombanaTurnstile;
 
@@ -117,9 +125,34 @@ try {
 const { error } = respuestaLogin;
 
   if (error) {
+    const codigo = String(error.code || '').toLowerCase();
+    const credencialesIncorrectas = codigo === 'invalid_credentials' ||
+      (!codigo && /invalid login credentials/i.test(error.message || ''));
+
+    if (credencialesIncorrectas && bloqueoLocal) {
+      const intento = bloqueoLocal.registrarFallo(email);
+      if (intento.bloqueado) {
+        bloqueoLocal.avisar(
+          'Por tres intentos incorrectos, el acceso con contraseña ' +
+          'desde este navegador queda suspendido por ' + intento.minutos +
+          (intento.minutos === 1 ? ' minuto.' : ' minutos.'),
+          true
+        );
+      } else {
+        bloqueoLocal.avisar(
+          'Correo o contraseña incorrectos. Te quedan ' +
+          intento.restantes + ' intento(s) antes del bloqueo temporal.'
+        );
+      }
+      return;
+    }
+
     alert('Error al iniciar sesión: ' + error.message);
     return;
   }
+
+  // Un acceso correcto reinicia ambos niveles de advertencia.
+  bloqueoLocal?.registrarExito(email);
 
   const { data: sessionData, error: sessionError } =
     await supabaseClient.auth.getSession();
