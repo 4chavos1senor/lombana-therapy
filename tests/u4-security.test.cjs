@@ -100,20 +100,23 @@ test('MFA pide challenge y verify antes de confirmar', async () => {
   assert.equal(llamadas.verify[0].code, '123456');
 });
 
-test('Turnstile y MFA siguen deshabilitados en configuración pública', () => {
+test('CAPTCHA y MFA apagados; Session Timeout habilitado a los 30 segundos', () => {
   const source = leer('js/config.js');
   const window = {};
   vm.runInNewContext(source, { window });
   assert.equal(window.LOMBANA_CONFIG.security.captchaEnabled, false);
   assert.equal(window.LOMBANA_CONFIG.security.mfaEnabled, false);
-  assert.equal(window.LOMBANA_CONFIG.security.sessionTimeoutEnabled, false);
+  assert.equal(window.LOMBANA_CONFIG.security.sessionTimeoutEnabled, true);
   assert.equal(window.LOMBANA_CONFIG.security.turnstileSiteKey, '');
 });
 
 test('Los scripts de inactividad se cargan después del cliente Supabase', () => {
   for (const archivo of [
-    'agendar.html','admin.html','mis-citas.html',
-    'seguridad-2fa.html','verificar-2fa.html'
+    'index.html','terapias.html','terapia-detalle.html',
+    'login.html','registro.html','agendar.html','admin.html',
+    'mis-citas.html','seguridad-2fa.html','verificar-2fa.html',
+    'cita-confirmada.html','pago-resultado.html','cita-demo.html',
+    'reenviar-confirmacion.html'
   ]) {
     const html = leer(archivo);
     const sdk = html.indexOf('src="js/supabase.js"');
@@ -143,4 +146,18 @@ test('La recuperación de contraseña administrativa no fue modificada', () => {
 test('La protección contra bloqueo es solo un borrador, no una migración', () => {
   assert.match(leer('docs/ACCOUNT_LOCKOUT_U4_HOOK_BORRADOR.sql'), /NO EJECUTAR EN PRODUCCION/);
   assert.match(leer('docs/U4_SEGURIDAD_INTEGRACION.md'), /NO activado en producción/);
+});
+
+
+test('El regreso al login muestra el motivo de inactividad al usuario', () => {
+  const html = leer('login.html');
+  assert.match(html, /id="aviso-timeout-login"/);
+  assert.match(html, /params\.get\('motivo'\) === 'inactividad'/);
+  assert.match(html, /30 segundos sin actividad/);
+});
+
+test('La configuración generada activa el timeout por defecto y respeta false explícito', () => {
+  const codigo = leer('scripts/build-config.cjs');
+  assert.match(codigo, /SESSION_TIMEOUT_ENABLED \|\| "true"/);
+  assert.match(leer('.env.example'), /SESSION_TIMEOUT_ENABLED=true/);
 });
