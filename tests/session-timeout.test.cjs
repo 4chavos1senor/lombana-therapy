@@ -10,7 +10,7 @@ const vm = require('node:vm');
 
 const archivo = path.resolve(__dirname, '../js/session-timeout.js');
 const codigo = fs.readFileSync(archivo, 'utf8');
-const habilitacion = 'const TIMEOUT_ACTIVO = window.LOMBANA_CONFIG?.security?.sessionTimeoutEnabled === true;';
+const habilitacion = 'const TIMEOUT_ACTIVO = typeof window !== 'undefined' && window.LOMBANA_CONFIG?.security?.sessionTimeoutEnabled === true;';
 const AHORA = Date.parse('2026-11-27T12:00:00Z');
 const SESION = {
   access_token: 'token-simulado',
