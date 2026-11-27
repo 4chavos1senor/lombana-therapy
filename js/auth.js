@@ -22,30 +22,37 @@ async function registrarUsuario(event) {
     return;
   }
 
-  const { data, error } = await supabaseClient.auth.signUp({
-    email: email,
-    password: password,
-    options: {
-      data: {
-        nombre: nombre,
-        telefono: telefono,
-        email: email,
-        genero: genero
-        // Rol administrativo nunca se toma desde metadatos del cliente.
-      },
-emailRedirectTo: new URL('login.html', window.location.href).href,
-...(captchaActivo ? { captchaToken } : {})
-    }
-  });
-// Reiniciar el CAPTCHA después del intento de registro.
-if (captchaActivo) {
-  captcha.reiniciar();
-}
+  const captcha = window.LombanaTurnstile;
+  const captchaActivo = captcha?.estaActivo?.() === true;
+  const captchaToken = captchaActivo ? captcha.obtenerToken() : null;
+  if (captchaActivo && !captchaToken) {
+    alert('Completa la verificación de seguridad.');
+    return;
+  }
 
-if (error) {
-  alert('Error al registrar: ' + error.message);
-  return;
-}
+  let respuestaRegistro;
+  try {
+    respuestaRegistro = await supabaseClient.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          nombre: nombre,
+          telefono: telefono,
+          email: email,
+          genero: genero
+          // Rol administrativo nunca se toma desde metadatos del cliente.
+        },
+        emailRedirectTo: new URL('login.html', window.location.href).href,
+        ...(captchaActivo ? { captchaToken } : {})
+      }
+    });
+  } finally {
+    // Un token usado en un intento no debe reutilizarse.
+    if (captchaActivo) captcha.reiniciar();
+  }
+
+  const { error } = respuestaRegistro;
   if (error) {
     alert('Error al registrar: ' + error.message);
     return;
@@ -53,14 +60,14 @@ if (error) {
 
   // El perfil lo crea el trigger de auth.users. Nunca establecer roles desde JS.
   // Si Supabase requiere confirmación de correo, puede no existir sesión todavía.
-
   alert('Registro recibido. Si tu correo requiere verificación, confirma el mensaje antes de iniciar sesión.');
-const params = new URLSearchParams(window.location.search);
-const redirect = destinoLocalSeguro(params.get('redirect'));
 
-window.location.href = redirect
-  ? 'login.html?redirect=' + encodeURIComponent(redirect)
-  : 'login.html';}
+  const params = new URLSearchParams(window.location.search);
+  const redirect = destinoLocalSeguro(params.get('redirect'));
+  window.location.href = redirect
+    ? 'login.html?redirect=' + encodeURIComponent(redirect)
+    : 'login.html';
+}
 
 async function iniciarSesion(event) {
   event.preventDefault();
@@ -98,15 +105,16 @@ if (captchaActivo) {
   };
 }
 
-const { error } =
-  await supabaseClient.auth.signInWithPassword(
+let respuestaLogin;
+try {
+  respuestaLogin = await supabaseClient.auth.signInWithPassword(
     credenciales
   );
-
-// Los tokens CAPTCHA no deben reutilizarse.
-if (captchaActivo) {
-  captcha.reiniciar();
+} finally {
+  // Un token usado en un intento no debe reutilizarse.
+  if (captchaActivo) captcha.reiniciar();
 }
+const { error } = respuestaLogin;
 
   if (error) {
     alert('Error al iniciar sesión: ' + error.message);
@@ -182,9 +190,6 @@ async function iniciarSesionConGoogle() {
           redirectTo: callback.href
         }
       });
-if (captchaActivo) {
-  captcha.reiniciar();
-}
     if (error) {
       throw error;
     }
