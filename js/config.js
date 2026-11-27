@@ -4,8 +4,8 @@ window.LOMBANA_CONFIG = Object.freeze({
   supabaseUrl: "https://pqeqarxybindwbgsbdlq.supabase.co",
   supabasePublishableKey: "sb_publishable_bh_S678j3018LiFEUpNWJg_4fRZGPD3",
   security: {
-    captchaEnabled: false,
-    turnstileSiteKey: '',
+    captchaEnabled: true,
+    turnstileSiteKey: '0x4AAAAAAGVVkctQrQfNpvWz',
     mfaEnabled: false,
     sessionTimeoutEnabled: true
   }
