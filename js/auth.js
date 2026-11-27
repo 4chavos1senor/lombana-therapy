@@ -118,9 +118,6 @@ try {
   respuestaLogin = await supabaseClient.auth.signInWithPassword(
     credenciales
   );
-} catch (_) {
-  alert('No fue posible conectar con el servicio de inicio de sesión. Inténtalo después.');
-  return;
 } finally {
   // Un token usado en un intento no debe reutilizarse.
   if (captchaActivo) captcha.reiniciar();
