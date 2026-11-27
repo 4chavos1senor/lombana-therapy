@@ -11,7 +11,7 @@
 | CAPTCHA | Turnstile con configuración pública + envío captchaToken en login y registro | Sí: Cloudflare + Supabase |
 | MFA (TOTP) | Enrolamiento voluntario, QR, desafío de 6 cifras, redirección y UI bajo bandera | Sí: aplicación autenticadora, pruebas de acceso; RLS/AAL2 para rutas sensibles |
 | Session Timeout | 15 min y carga de script en páginas de sesión, bandera configurable | Sí: prueba navegando entre pestañas |
-| Account Lockout | Diseño de hook seguro en `docs/ACCOUNT_LOCKOUT_U4_HOOK_BORRADOR.sql` | Sí: *no desplegado*. Requiere plan con Password Verification Attempt Hook |
+| Account Lockout | Avisos y bloqueo local 3/1/2 en navegador; borrador de hook SQL | Sí: el bloqueo real de cuentas **no está desplegado**, requiere Teams/Enterprise y pruebas antiabuso |
 | Corrección | Tests locales sin red y flujo existente preservado | Sí: regresión real en entorno de pruebas |
 
 ## Interruptores del frontend
@@ -40,7 +40,7 @@ La Secret Key debe configurarse únicamente en Supabase Authentication > Bot and
 
 ## Limitaciones
 
-- Un control de acceso solo en el navegador no reemplaza una política RLS del servidor.
+- Un control de acceso solo en el navegador **no es Account Lockout de servidor**: borrar localStorage o usar otra máquina evade el contador. Los avisos de bloqueo son solo visuales, no correos electrónicos.
 - El SQL de Account Lockout es un borrador **no ejecutado ni validado** y requiere un ensayo en entorno de prueba.
 - Activar MFA optativo puede afectar la recuperación de acceso si un usuario pierde su autenticador; disponer de soporte autorizado y proceso de recuperación.
 - Estas pruebas automatizadas son simulaciones: no confirman todavía que Google OAuth, Cloudflare o Supabase estén operando en vivo.
