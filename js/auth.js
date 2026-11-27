@@ -110,3 +110,42 @@ async function cerrarSesion() {
   alert('Sesión cerrada correctamente.');
   window.location.href = 'login.html';
 }
+
+async function iniciarSesionConGoogle() {
+  try {
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
+    const redirect = destinoLocalSeguro(
+      params.get('redirect')
+    );
+
+    const callback = new URL(
+      'auth-callback.html',
+      window.location.href
+    );
+
+    if (redirect) {
+      callback.searchParams.set('redirect', redirect);
+    }
+
+    const { error } =
+      await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: callback.href
+        }
+      });
+
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error de autenticación OAuth');
+    alert(
+      'No fue posible iniciar sesión con Google. ' +
+      'Inténtalo nuevamente.'
+    );
+  }
+}
