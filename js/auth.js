@@ -21,6 +21,7 @@ async function registrarUsuario(event) {
     alert('El teléfono no tiene un formato válido.');
     return;
   }
+
   const { data, error } = await supabaseClient.auth.signUp({
     email: email,
     password: password,
@@ -32,10 +33,19 @@ async function registrarUsuario(event) {
         genero: genero
         // Rol administrativo nunca se toma desde metadatos del cliente.
       },
-      emailRedirectTo: new URL('login.html', window.location.href).href
+emailRedirectTo: new URL('login.html', window.location.href).href,
+...(captchaActivo ? { captchaToken } : {})
     }
   });
+// Reiniciar el CAPTCHA después del intento de registro.
+if (captchaActivo) {
+  captcha.reiniciar();
+}
 
+if (error) {
+  alert('Error al registrar: ' + error.message);
+  return;
+}
   if (error) {
     alert('Error al registrar: ' + error.message);
     return;
@@ -55,13 +65,48 @@ window.location.href = redirect
 async function iniciarSesion(event) {
   event.preventDefault();
 
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
+const email = document.getElementById('email').value.trim();
+const password = document.getElementById('password').value;
 
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email: email,
-    password: password
-  });
+// Consultar el módulo CAPTCHA si está disponible.
+const captcha = window.LombanaTurnstile;
+
+const captchaActivo =
+  captcha?.estaActivo?.() === true;
+
+const captchaToken = captchaActivo
+  ? captcha.obtenerToken()
+  : null;
+
+// No permitir el envío si CAPTCHA está activado
+// pero todavía no existe un token válido.
+if (captchaActivo && !captchaToken) {
+  alert('Completa la verificación de seguridad.');
+  return;
+}
+
+// Conservar el inicio de sesión original.
+const credenciales = {
+  email: email,
+  password: password
+};
+
+// Enviar el token solamente si CAPTCHA está activo.
+if (captchaActivo) {
+  credenciales.options = {
+    captchaToken: captchaToken
+  };
+}
+
+const { error } =
+  await supabaseClient.auth.signInWithPassword(
+    credenciales
+  );
+
+// Los tokens CAPTCHA no deben reutilizarse.
+if (captchaActivo) {
+  captcha.reiniciar();
+}
 
   if (error) {
     alert('Error al iniciar sesión: ' + error.message);
@@ -137,7 +182,9 @@ async function iniciarSesionConGoogle() {
           redirectTo: callback.href
         }
       });
-
+if (captchaActivo) {
+  captcha.reiniciar();
+}
     if (error) {
       throw error;
     }
