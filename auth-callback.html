@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>Verificando acceso | Lombana Therapy</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="form-section">
+    <section class="form-card">
+      <h1>Lombana Therapy</h1>
+      <p id="estado" role="status" aria-live="polite">
+        Verificando tu inicio de sesión...
+      </p>
+      <a id="volver-login" href="login.html" hidden>
+        Volver a iniciar sesión
+      </a>
+    </section>
+  </main>
+
+  <script src="js/vendor/supabase.bundle.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    async function completarAutenticacion() {
+      const estado = document.getElementById('estado');
+      const volver = document.getElementById('volver-login');
+
+      try {
+        const { data: sesion, error: errorSesion } =
+          await supabaseClient.auth.getSession();
+
+        if (errorSesion || !sesion.session) {
+          throw new Error('Sesión no disponible');
+        }
+
+        const { data, error } =
+          await supabaseClient.auth.getUser();
+
+        if (error || !data.user) {
+          throw new Error('Usuario no verificado');
+        }
+
+        const { data: perfil, error: errorPerfil } =
+          await supabaseClient
+            .from('profiles')
+            .select('rol')
+            .eq('id', data.user.id)
+            .maybeSingle();
+
+        if (errorPerfil || !perfil) {
+          throw new Error('Perfil no disponible');
+        }
+
+        if (perfil.rol === 'admin') {
+          window.location.replace('admin.html');
+          return;
+        }
+
+        const params = new URLSearchParams(
+          window.location.search
+        );
+
+        const destino = destinoLocalSeguro(
+          params.get('redirect')
+        );
+
+        window.location.replace(
+          destino || 'index.html'
+        );
+      } catch (error) {
+        console.error('No se completó la autenticación');
+        estado.textContent =
+          'No se pudo verificar tu sesión. ' +
+          'Regresa al inicio de sesión.';
+        volver.hidden = false;
+      }
+    }
+
+    completarAutenticacion();
+  </script>
+</body>
+</html>

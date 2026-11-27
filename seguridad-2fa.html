@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>Seguridad de cuenta | Lombana Therapy</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <main class="form-section">
+    <section class="form-card">
+
+      <h1>Lombana Therapy</h1>
+      <h2>Verificación en dos pasos</h2>
+
+      <p>
+        Protege tu cuenta mediante un código temporal
+        generado por Google Authenticator u otra
+        aplicación compatible.
+      </p>
+
+      <h3>1. Configurar autenticador</h3>
+
+      <p>
+        Cuando habilitemos esta función, aquí
+        aparecerá un código QR para vincular
+        tu aplicación.
+      </p>
+
+      <img
+        id="codigo-qr"
+        alt="Código QR para configurar la verificación"
+        width="180"
+        height="180"
+        hidden
+      >
+
+      <button
+        type="button"
+        class="btn-primary"
+        id="btn-activar-mfa"
+        disabled
+      >
+        Activar verificación
+      </button>
+
+      <h3>2. Introducir código de seguridad</h3>
+
+      <label for="codigo-mfa">
+        Código de seis dígitos
+      </label>
+
+      <input
+        type="text"
+        id="codigo-mfa"
+        inputmode="numeric"
+        pattern="[0-9]{6}"
+        maxlength="6"
+        autocomplete="one-time-code"
+        placeholder="000000"
+        disabled
+      >
+
+      <button
+        type="button"
+        class="btn-primary"
+        id="btn-verificar-mfa"
+        disabled
+      >
+        Verificar código
+      </button>
+
+      <p id="estado-mfa" role="status"
+         aria-live="polite">
+        Verificación en dos pasos pendiente
+        de configuración.
+      </p>
+
+      <p>
+        <a href="index.html">
+          Volver al inicio
+        </a>
+      </p>
+
+    </section>
+  </main>
+
+  <script src="js/vendor/supabase.bundle.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/mfa.js"></script>
+  <script src="js/mfa-ui.js"></script>
+
+</body>
+</html>

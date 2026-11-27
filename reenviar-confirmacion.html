@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>Confirmar correo | Lombana Therapy</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <main class="form-section">
+    <form class="form-card" id="form-confirmacion">
+      <h1>Lombana Therapy</h1>
+      <h2>Verificación de correo</h2>
+
+      <p>
+        Si todavía no has confirmado tu correo,
+        puedes solicitar un nuevo enlace.
+      </p>
+
+      <label for="correo">Correo electrónico</label>
+      <input
+        type="email"
+        id="correo"
+        autocomplete="email"
+        required
+      >
+
+      <button type="submit" class="btn-primary"
+              id="btn-reenviar">
+        Reenviar confirmación
+      </button>
+
+      <p id="mensaje" role="status"
+         aria-live="polite"></p>
+
+      <p>
+        <a href="login.html">
+          Volver a iniciar sesión
+        </a>
+      </p>
+    </form>
+  </main>
+
+  <script src="js/vendor/supabase.bundle.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+
+  <script>
+    const form = document.getElementById(
+      'form-confirmacion'
+    );
+
+    form.addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const correo = document.getElementById(
+        'correo'
+      ).value.trim();
+
+      const boton = document.getElementById(
+        'btn-reenviar'
+      );
+
+      const mensaje = document.getElementById(
+        'mensaje'
+      );
+
+      boton.disabled = true;
+      mensaje.textContent = 'Procesando solicitud...';
+
+      try {
+        const { error } = await supabaseClient.auth.resend({
+          type: 'signup',
+          email: correo,
+          options: {
+            emailRedirectTo: new URL(
+              'login.html',
+              window.location.href
+            ).href
+          }
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        mensaje.textContent =
+          'Si existe una cuenta pendiente de confirmación, ' +
+          'recibirás un correo con las instrucciones.';
+      } catch (error) {
+        mensaje.textContent =
+          'No se pudo procesar la solicitud. ' +
+          'Inténtalo nuevamente más tarde.';
+      } finally {
+        boton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

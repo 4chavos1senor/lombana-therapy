@@ -250,6 +250,16 @@
         <label for="password">Contraseña</label>
         <input type="password" id="password" name="password" autocomplete="new-password" minlength="8" required>
 
+<!-- Protección CAPTCHA del registro -->
+<div id="contenedor-captcha" hidden></div>
+
+<p
+  id="mensaje-captcha"
+  role="status"
+  aria-live="polite"
+  hidden
+></p>
+
         <button type="submit" class="btn-primary">Registrarme</button>
 
         <p class="form-link">
@@ -267,7 +277,7 @@
   <script src="js/vendor/supabase.bundle.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
-
+  <script src="js/turnstile.js"></script>
   <!-- Función registrarUsuario(event) -->
   <script src="js/auth.js"></script>
   <script defer src="js/accesibilidad.js"></script>

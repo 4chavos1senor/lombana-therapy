@@ -21,21 +21,38 @@ async function registrarUsuario(event) {
     alert('El teléfono no tiene un formato válido.');
     return;
   }
-  const { data, error } = await supabaseClient.auth.signUp({
-    email: email,
-    password: password,
-    options: {
-      data: {
-        nombre: nombre,
-        telefono: telefono,
-        email: email,
-        genero: genero
-        // Rol administrativo nunca se toma desde metadatos del cliente.
-      },
-      emailRedirectTo: new URL('login.html', window.location.href).href
-    }
-  });
 
+  const captcha = window.LombanaTurnstile;
+  const captchaActivo = captcha?.estaActivo?.() === true;
+  const captchaToken = captchaActivo ? captcha.obtenerToken() : null;
+  if (captchaActivo && !captchaToken) {
+    alert('Completa la verificación de seguridad.');
+    return;
+  }
+
+  let respuestaRegistro;
+  try {
+    respuestaRegistro = await supabaseClient.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          nombre: nombre,
+          telefono: telefono,
+          email: email,
+          genero: genero
+          // Rol administrativo nunca se toma desde metadatos del cliente.
+        },
+        emailRedirectTo: new URL('login.html', window.location.href).href,
+        ...(captchaActivo ? { captchaToken } : {})
+      }
+    });
+  } finally {
+    // Un token usado en un intento no debe reutilizarse.
+    if (captchaActivo) captcha.reiniciar();
+  }
+
+  const { error } = respuestaRegistro;
   if (error) {
     alert('Error al registrar: ' + error.message);
     return;
@@ -43,25 +60,61 @@ async function registrarUsuario(event) {
 
   // El perfil lo crea el trigger de auth.users. Nunca establecer roles desde JS.
   // Si Supabase requiere confirmación de correo, puede no existir sesión todavía.
-
   alert('Registro recibido. Si tu correo requiere verificación, confirma el mensaje antes de iniciar sesión.');
-const params = new URLSearchParams(window.location.search);
-const redirect = destinoLocalSeguro(params.get('redirect'));
 
-window.location.href = redirect
-  ? 'login.html?redirect=' + encodeURIComponent(redirect)
-  : 'login.html';}
+  const params = new URLSearchParams(window.location.search);
+  const redirect = destinoLocalSeguro(params.get('redirect'));
+  window.location.href = redirect
+    ? 'login.html?redirect=' + encodeURIComponent(redirect)
+    : 'login.html';
+}
 
 async function iniciarSesion(event) {
   event.preventDefault();
 
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
+const email = document.getElementById('email').value.trim();
+const password = document.getElementById('password').value;
 
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email: email,
-    password: password
-  });
+// Consultar el módulo CAPTCHA si está disponible.
+const captcha = window.LombanaTurnstile;
+
+const captchaActivo =
+  captcha?.estaActivo?.() === true;
+
+const captchaToken = captchaActivo
+  ? captcha.obtenerToken()
+  : null;
+
+// No permitir el envío si CAPTCHA está activado
+// pero todavía no existe un token válido.
+if (captchaActivo && !captchaToken) {
+  alert('Completa la verificación de seguridad.');
+  return;
+}
+
+// Conservar el inicio de sesión original.
+const credenciales = {
+  email: email,
+  password: password
+};
+
+// Enviar el token solamente si CAPTCHA está activo.
+if (captchaActivo) {
+  credenciales.options = {
+    captchaToken: captchaToken
+  };
+}
+
+let respuestaLogin;
+try {
+  respuestaLogin = await supabaseClient.auth.signInWithPassword(
+    credenciales
+  );
+} finally {
+  // Un token usado en un intento no debe reutilizarse.
+  if (captchaActivo) captcha.reiniciar();
+}
+const { error } = respuestaLogin;
 
   if (error) {
     alert('Error al iniciar sesión: ' + error.message);
@@ -109,4 +162,42 @@ async function cerrarSesion() {
 
   alert('Sesión cerrada correctamente.');
   window.location.href = 'login.html';
+}
+
+async function iniciarSesionConGoogle() {
+  try {
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
+    const redirect = destinoLocalSeguro(
+      params.get('redirect')
+    );
+
+    const callback = new URL(
+      'auth-callback.html',
+      window.location.href
+    );
+
+    if (redirect) {
+      callback.searchParams.set('redirect', redirect);
+    }
+
+    const { error } =
+      await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: callback.href
+        }
+      });
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error de autenticación OAuth');
+    alert(
+      'No fue posible iniciar sesión con Google. ' +
+      'Inténtalo nuevamente.'
+    );
+  }
 }

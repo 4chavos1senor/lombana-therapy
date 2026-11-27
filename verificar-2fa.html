@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+
+  <title>Verificar identidad | Lombana Therapy</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <main class="form-section">
+    <section class="form-card">
+
+      <h1>Lombana Therapy</h1>
+
+      <h2>Verificación de identidad</h2>
+
+      <p>
+        Para proteger tu cuenta, introduce el
+        código temporal de seis dígitos generado
+        por tu aplicación de autenticación.
+      </p>
+
+      <label for="codigo-verificacion">
+        Código de seguridad
+      </label>
+
+      <input
+        type="text"
+        id="codigo-verificacion"
+        inputmode="numeric"
+        pattern="[0-9]{6}"
+        maxlength="6"
+        autocomplete="one-time-code"
+        placeholder="000000"
+        disabled
+      >
+
+      <button
+        type="button"
+        class="btn-primary"
+        id="btn-confirmar-codigo"
+        disabled
+      >
+        Verificar identidad
+      </button>
+
+      <p
+        id="mensaje-verificacion"
+        role="status"
+        aria-live="polite"
+      >
+        La verificación en dos pasos todavía
+        no está habilitada.
+      </p>
+
+      <p>
+        <a href="login.html">
+          Volver al inicio de sesión
+        </a>
+      </p>
+
+    </section>
+  </main>
+  <script src="js/mfa-verificacion.js"></script>
+</body>
+</html>
