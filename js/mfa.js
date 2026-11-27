@@ -9,6 +9,17 @@
  */
 
 window.LombanaMFA = (() => {
+  function estaActivo() {
+    return window.LOMBANA_CONFIG?.security?.mfaEnabled === true;
+  }
+
+  // No se exige un segundo factor a quienes aún no tengan uno verificado.
+  async function requiereVerificacion() {
+    if (!estaActivo()) return false;
+    const nivel = await obtenerNivel();
+    return nivel?.currentLevel === 'aal1' && nivel?.nextLevel === 'aal2';
+  }
+
   function obtenerMFA() {
     if (
       typeof supabaseClient === 'undefined' ||
@@ -103,6 +114,8 @@ window.LombanaMFA = (() => {
   }
 
   return Object.freeze({
+    estaActivo,
+    requiereVerificacion,
     obtenerNivel,
     obtenerFactores,
     iniciarConfiguracion,

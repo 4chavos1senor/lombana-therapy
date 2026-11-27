@@ -10,11 +10,11 @@
 (() => {
   'use strict';
 
-  const CAPTCHA_ACTIVO = false;
+  const seguridad = window.LOMBANA_CONFIG?.security;
+  const CAPTCHA_ACTIVO = seguridad?.captchaEnabled === true;
 
-  // Aquí se configurará solamente la Site Key pública.
-  // NUNCA colocar la Secret Key en JavaScript.
-  const SITE_KEY = '';
+  // Clave PUBLICABLE: la Secret Key se guarda solo en Supabase.
+  const SITE_KEY = seguridad?.turnstileSiteKey || '';
 
   let captchaToken = null;
   let widgetId = null;

@@ -16,8 +16,12 @@
       <h2>Verificación de correo</h2>
 
       <p>
-        Si todavía no has confirmado tu correo,
-        puedes solicitar un nuevo enlace.
+        Si te registraste con correo y contraseña y aún no
+        confirmaste tu cuenta, puedes solicitar otro enlace.
+      </p>
+      <p>
+        Si accediste con Google, generalmente no necesitas
+        este correo de confirmación adicional.
       </p>
 
       <label for="correo">Correo electrónico</label>
@@ -47,6 +51,7 @@
   <script src="js/vendor/supabase.bundle.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
+  <script src="js/session-timeout.js"></script>
 
   <script>
     const form = document.getElementById(
@@ -87,13 +92,36 @@
           throw error;
         }
 
+        // La solicitud aceptada NO garantiza entrega, ni que la cuenta
+        // esté pendiente: Supabase evita revelar la existencia de usuarios.
         mensaje.textContent =
-          'Si existe una cuenta pendiente de confirmación, ' +
-          'recibirás un correo con las instrucciones.';
+          'Solicitud recibida. Si existe una cuenta registrada con ' +
+          'correo y contraseña pendiente de confirmación, revisa tu ' +
+          'bandeja de entrada y correo no deseado. El envío depende ' +
+          'de la configuración de correo del servidor.';
       } catch (error) {
-        mensaje.textContent =
-          'No se pudo procesar la solicitud. ' +
-          'Inténtalo nuevamente más tarde.';
+        const codigo = String(error?.code || '').toLowerCase();
+        const status = Number(error?.status || 0);
+
+        // No imprimir correos ni información sensible en consola.
+        console.warn('Reenvío de confirmación fallido:', codigo, status);
+
+        if (codigo === 'email_address_not_authorized' ||
+            codigo === 'email_not_authorized') {
+          mensaje.textContent =
+            'El servicio de correo todavía no admite esta dirección. ' +
+            'Contacta a Lombana Therapy para solicitar ayuda.';
+        } else if (status === 429 ||
+                   codigo === 'over_email_send_rate_limit' ||
+                   codigo === 'over_request_rate_limit') {
+          mensaje.textContent =
+            'Se alcanzó el límite temporal de envíos. ' +
+            'Espera antes de solicitar otro correo.';
+        } else {
+          mensaje.textContent =
+            'No se pudo enviar la solicitud de confirmación. ' +
+            'Inténtalo más tarde o contacta a Lombana Therapy.';
+        }
       } finally {
         boton.disabled = false;
       }

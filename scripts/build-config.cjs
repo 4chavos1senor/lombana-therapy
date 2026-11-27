@@ -45,9 +45,23 @@ if (!clave.startsWith("sb_publishable_")) {
 }
 
 // Solo exportamos valores públicos al navegador
+const security = {
+  captchaEnabled: variables.CAPTCHA_ENABLED === "true",
+  turnstileSiteKey: (variables.TURNSTILE_SITE_KEY || "").trim(),
+  mfaEnabled: variables.MFA_ENABLED === "true",
+  sessionTimeoutEnabled: (variables.SESSION_TIMEOUT_ENABLED || "true") === "true"
+};
+
+if (security.captchaEnabled && !security.turnstileSiteKey) {
+  console.error("ERROR: CAPTCHA_ENABLED requiere TURNSTILE_SITE_KEY.");
+  process.exit(1);
+}
+
+// No exportar secretos: Turnstile Secret Key se configura SOLO en Supabase.
 const configuracion = {
   supabaseUrl: url,
-  supabasePublishableKey: clave
+  supabasePublishableKey: clave,
+  security
 };
 
 const contenido =
