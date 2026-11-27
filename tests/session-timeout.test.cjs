@@ -32,7 +32,7 @@ function entorno({
   ahoraInicial = AHORA
 }) {
   assert.ok(codigo.includes(habilitacion),
-    'El módulo de producción debe seguir desactivado');
+    'La bandera del control debe ser configurable');
 
   // Se activa SOLO una copia EN MEMORIA, nunca el archivo original.
   const codigoSimulado = codigo.replace(
@@ -43,9 +43,11 @@ function entorno({
   let cierres = 0;
   let redireccion = null;
   let pantalla = null;
+  let monitorIntervalMs = null;
+  let monitorCallback = null;
   const almacen = almacenCompartido || new Map();
-  const clave = claveDe(sesion);
-  if (!almacen.has(clave)) {
+  const clave = sesion ? claveDe(sesion) : null;
+  if (clave && !almacen.has(clave)) {
     almacen.set(clave, String(ahora - inactivoMs));
   }
   const eventosDocumento = new Map();
@@ -65,7 +67,10 @@ function entorno({
   const contexto = {
     console: { error() {} },
     Date: class extends Date { static now() { return ahora; } },
-    setInterval() {},
+    setInterval(callback, ms) {
+      monitorIntervalMs = ms;
+      monitorCallback = callback;
+    },
     localStorage: {
       getItem(clave) { return almacen.has(clave) ? almacen.get(clave) : null; },
       setItem(clave, valor) { almacen.set(clave, String(valor)); },
@@ -104,6 +109,10 @@ function entorno({
       assert.equal(typeof funcion, 'function', `Falta el evento ${nombre}`);
       funcion();
     },
+    revisar() {
+      if (monitorCallback) monitorCallback();
+    },
+    get intervaloMs() { return monitorIntervalMs; },
     foco() {
       const funcion = eventosVentana.get('focus');
       assert.equal(typeof funcion, 'function');
@@ -136,11 +145,11 @@ test('Desactivado: no consulta Supabase', () => {
 });
 
 test('Actividad válida renueva el contador sin cerrar sesión', async () => {
-  const sim = entorno({ inactivoMs: 10 * 60 * 1000 });
+  const sim = entorno({ inactivoMs: 10 * 1000 });
   await vaciarMicrotareas();
   sim.evento('pointerdown');
   assert.equal(sim.almacen.get(CLAVE), String(AHORA));
-  sim.avanzar(14 * 60 * 1000);
+  sim.avanzar(14 * 1000);
   sim.foco();
   await vaciarMicrotareas();
   assert.equal(sim.cierres, 0);
@@ -148,7 +157,7 @@ test('Actividad válida renueva el contador sin cerrar sesión', async () => {
 });
 
 test('Un clic después del vencimiento no renueva la sesión', async () => {
-  const sim = entorno({ inactivoMs: 14 * 60 * 1000 + 59 * 1000 });
+  const sim = entorno({ inactivoMs: 29 * 1000 });
   await vaciarMicrotareas();
   sim.avanzar(2000);
   sim.evento('pointerdown');
@@ -159,7 +168,7 @@ test('Un clic después del vencimiento no renueva la sesión', async () => {
 });
 
 test('Si falla signOut la pantalla queda bloqueada', async () => {
-  const sim = entorno({ inactivoMs: 16 * 60 * 1000, fallaCierre: true });
+  const sim = entorno({ inactivoMs: 31 * 1000, fallaCierre: true });
   await vaciarMicrotareas();
   assert.equal(sim.cierres, 1);
   assert.equal(sim.redireccion, null);
@@ -174,16 +183,16 @@ test('Si falla signOut la pantalla queda bloqueada', async () => {
 
 
 test('Varias pestañas comparten actividad de la misma sesión', async () => {
-  const tab1 = entorno({ inactivoMs: 10 * 60 * 1000 });
+  const tab1 = entorno({ inactivoMs: 10 * 1000 });
   const tab2 = entorno({
-    inactivoMs: 10 * 60 * 1000,
+    inactivoMs: 10 * 1000,
     almacenCompartido: tab1.almacen
   });
   await vaciarMicrotareas();
 
   // La primera pestaña está activa, y la segunda se comprueba más tarde.
   tab1.evento('pointerdown');
-  tab2.avanzar(14 * 60 * 1000);
+  tab2.avanzar(14 * 1000);
   tab2.cambioAlmacen();
   await vaciarMicrotareas();
 
@@ -193,7 +202,7 @@ test('Varias pestañas comparten actividad de la misma sesión', async () => {
 });
 
 test('Cambiar de cuenta no reutiliza la actividad de otro usuario', async () => {
-  const usuarioAnterior = entorno({ inactivoMs: 16 * 60 * 1000 });
+  const usuarioAnterior = entorno({ inactivoMs: 31 * 1000 });
   await vaciarMicrotareas();
   assert.equal(usuarioAnterior.cierres, 1);
 
@@ -205,7 +214,7 @@ test('Cambiar de cuenta no reutiliza la actividad de otro usuario', async () => 
     }
   };
   const nuevaCuenta = entorno({
-    inactivoMs: 60 * 1000,
+    inactivoMs: 10 * 1000,
     sesion: nuevaSesion,
     almacenCompartido: usuarioAnterior.almacen
   });
@@ -216,14 +225,14 @@ test('Cambiar de cuenta no reutiliza la actividad de otro usuario', async () => 
   assert.equal(nuevaCuenta.redireccion, null);
 });
 
-test('Reabrir una pestaña tras 15 minutos no renueva sesión vencida', async () => {
-  const primeraApertura = entorno({ inactivoMs: 1 * 60 * 1000 });
+test('Reabrir una pestaña tras 30 segundos no renueva sesión vencida', async () => {
+  const primeraApertura = entorno({ inactivoMs: 10 * 1000 });
   await vaciarMicrotareas();
   assert.equal(primeraApertura.cierres, 0);
 
   const nuevaApertura = entorno({
-    inactivoMs: 1 * 60 * 1000,
-    ahoraInicial: AHORA + 16 * 60 * 1000,
+    inactivoMs: 10 * 1000,
+    ahoraInicial: AHORA + 31 * 1000,
     almacenCompartido: primeraApertura.almacen
   });
   await vaciarMicrotareas();
@@ -232,4 +241,70 @@ test('Reabrir una pestaña tras 15 minutos no renueva sesión vencida', async ()
   assert.equal(nuevaApertura.redireccion,
     'login.html?motivo=inactividad');
   assert.equal(nuevaApertura.almacen.has(nuevaApertura.clave), false);
+});
+
+
+test('Sin sesión iniciada no se activa el temporizador ni se cierra el acceso', async () => {
+  const sim = entorno({ inactivoMs: 0, sesion: null });
+  await vaciarMicrotareas();
+  assert.equal(sim.intervaloMs, null);
+  assert.equal(sim.cierres, 0);
+  assert.equal(sim.redireccion, null);
+});
+
+test('A los 29 segundos no se cierra, al llegar a 30 segundos sí', async () => {
+  const sim = entorno({ inactivoMs: 0 });
+  await vaciarMicrotareas();
+  assert.equal(sim.intervaloMs, 1000, 'Revisar cada segundo');
+  sim.avanzar(29_000);
+  sim.revisar();
+  await vaciarMicrotareas();
+  assert.equal(sim.cierres, 0);
+  sim.avanzar(1000);
+  sim.revisar();
+  await vaciarMicrotareas();
+  assert.equal(sim.cierres, 1);
+  assert.equal(sim.redireccion, 'login.html?motivo=inactividad');
+});
+
+test('Desplazamiento y movimiento de puntero reinician la inactividad', async () => {
+  const sim = entorno({ inactivoMs: 10_000 });
+  await vaciarMicrotareas();
+
+  sim.avanzar(15_000);
+  sim.evento('scroll');
+  assert.equal(sim.almacen.get(sim.clave), String(AHORA + 15_000));
+
+  sim.avanzar(29_000);
+  sim.evento('pointermove');
+  await vaciarMicrotareas();
+  assert.equal(sim.cierres, 0);
+
+  sim.avanzar(29_000);
+  sim.revisar();
+  await vaciarMicrotareas();
+  assert.equal(sim.cierres, 0);
+});
+
+test('Cuando la ventana recupera el foco se comprueba el tiempo vencido', async () => {
+  const sim = entorno({ inactivoMs: 0 });
+  await vaciarMicrotareas();
+  sim.avanzar(31_000);
+  sim.foco();
+  await vaciarMicrotareas();
+  assert.equal(sim.cierres, 1);
+});
+
+test('Desactivado por bandera no consulta al proveedor de sesión', () => {
+  let consultas = 0;
+  vm.runInNewContext(codigo, {
+    window: { LOMBANA_CONFIG: { security: { sessionTimeoutEnabled: false } } },
+    supabaseClient: { auth: { getSession() { consultas++; } } }
+  }, { timeout: 1000 });
+  assert.equal(consultas, 0);
+});
+
+test('El límite configurado es exactamente de 30 segundos', () => {
+  assert.match(codigo, /const TIMEOUT_SEGUNDOS = 30;/);
+  assert.match(codigo, /const TIMEOUT_MS = TIMEOUT_SEGUNDOS \* 1000;/);
 });

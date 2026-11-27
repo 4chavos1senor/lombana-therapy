@@ -2,8 +2,8 @@
 /*
  * Lombana Therapy - Session Timeout
  *
- * Cierre por inactividad: 15 minutos.
- * Preparado para pruebas; NO ACTIVADO.
+ * Cierre por inactividad: 30 segundos de inactividad.
+ * Solo se aplica si existe una sesión iniciada y la bandera está activa.
  *
  * Este módulo no sustituye los controles
  * de autorización y expiración del servidor.
@@ -12,10 +12,10 @@
 (() => {
   'use strict';
 
-  const TIMEOUT_MINUTOS = 15;
-  const TIMEOUT_MS = TIMEOUT_MINUTOS * 60 * 1000;
+  const TIMEOUT_SEGUNDOS = 30;
+  const TIMEOUT_MS = TIMEOUT_SEGUNDOS * 1000;
 
-  // Mantener desactivado hasta completar pruebas.
+  // Se habilita desde la configuración pública de la rama de desarrollo.
   const TIMEOUT_ACTIVO = typeof window !== 'undefined' && window.LOMBANA_CONFIG?.security?.sessionTimeoutEnabled === true;
 
   const PREFIJO = 'lombana_ultima_actividad_v2_';
@@ -190,8 +190,11 @@
 
     for (const evento of [
       'pointerdown',
+      'pointermove',
       'keydown',
-      'touchstart'
+      'touchstart',
+      'touchmove',
+      'scroll'
     ]) {
       document.addEventListener(
         evento,
@@ -225,19 +228,15 @@
       }
     });
 
-    setInterval(comprobarInactividad, 15000);
+    // Comprobación frecuente: 30 segundos no debe convertirse en 45.
+    setInterval(comprobarInactividad, 1000);
   }
 
   inicializar().catch(() => {
+    // Si la consulta de sesión falla, no sustituir páginas públicas.
+    // Las páginas protegidas conservan sus propias validaciones de acceso.
     if (TIMEOUT_ACTIVO) {
-      mostrarBloqueo(
-        'No se pudo preparar el control de sesión. ' +
-        'Recarga para reintentarlo.'
-      );
-
-      console.error(
-        'Error al iniciar el control de inactividad.'
-      );
+      console.error('Error al iniciar el control de inactividad.');
     }
   });
 })();

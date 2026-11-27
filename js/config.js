@@ -7,6 +7,6 @@ window.LOMBANA_CONFIG = Object.freeze({
     captchaEnabled: false,
     turnstileSiteKey: '',
     mfaEnabled: false,
-    sessionTimeoutEnabled: false
+    sessionTimeoutEnabled: true
   }
 });

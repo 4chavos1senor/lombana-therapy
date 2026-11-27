@@ -49,7 +49,7 @@ const security = {
   captchaEnabled: variables.CAPTCHA_ENABLED === "true",
   turnstileSiteKey: (variables.TURNSTILE_SITE_KEY || "").trim(),
   mfaEnabled: variables.MFA_ENABLED === "true",
-  sessionTimeoutEnabled: variables.SESSION_TIMEOUT_ENABLED === "true"
+  sessionTimeoutEnabled: (variables.SESSION_TIMEOUT_ENABLED || "true") === "true"
 };
 
 if (security.captchaEnabled && !security.turnstileSiteKey) {
