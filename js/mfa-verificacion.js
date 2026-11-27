@@ -1,59 +1,92 @@
-
 /*
- * LOMBANA THERAPY
- * Verificación del segundo factor (TOTP)
- *
- * Preparado para integración.
- * Deshabilitado hasta completar pruebas.
+ * Lombana Therapy - segundo factor en inicio de sesión.
+ * Nunca se activa sin configuración explícita.
  */
-
 (() => {
   'use strict';
 
-  const MFA_HABILITADO = false;
+  async function destinoSeguro() {
+    const params = new URLSearchParams(window.location.search);
+    const solicitado = params.get('redirect');
+    const permitidos = new Set([
+      'index.html', 'agendar.html', 'mis-citas.html',
+      'terapias.html', 'terapia-detalle.html'
+    ]);
 
-  async function inicializarVerificacion() {
-    const codigo = document.getElementById(
-      'codigo-verificacion'
-    );
-
-    const boton = document.getElementById(
-      'btn-confirmar-codigo'
-    );
-
-    const mensaje = document.getElementById(
-      'mensaje-verificacion'
-    );
-
-    if (!codigo || !boton || !mensaje) {
-      return;
+    if (solicitado !== 'admin.html') {
+      return permitidos.has(solicitado) ? solicitado : 'index.html';
     }
 
-    // No iniciar autenticación mientras falten pruebas.
+    // Nunca autorizar un panel administrativo desde un parámetro de URL.
+    const { data, error } = await supabaseClient.auth.getUser();
+    if (error || !data?.user) return 'index.html';
+
+    const respuesta = await supabaseClient
+      .from('profiles').select('rol').eq('id', data.user.id).maybeSingle();
+    return !respuesta.error && respuesta.data?.rol === 'admin'
+      ? 'admin.html'
+      : 'index.html';
+  }
+
+  async function inicializarVerificacion() {
+    const codigo = document.getElementById('codigo-verificacion');
+    const boton = document.getElementById('btn-confirmar-codigo');
+    const mensaje = document.getElementById('mensaje-verificacion');
+    if (!codigo || !boton || !mensaje) return;
+
     codigo.disabled = true;
     boton.disabled = true;
 
-    if (!MFA_HABILITADO) {
-      mensaje.textContent =
-        'La verificación en dos pasos está ' +
-        'preparada, pero aún no está habilitada.';
+    const mfa = window.LombanaMFA;
+    if (!mfa?.estaActivo?.()) {
+      mensaje.textContent = 'La verificación en dos pasos todavía no está habilitada.';
       return;
     }
 
-    // Este bloque se conectará después de comprobar
-    // la configuración de Supabase y la seguridad
-    // de las cuentas existentes.
-    mensaje.textContent =
-      'Pendiente de integración segura con Supabase.';
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error || !data?.session) {
+        mensaje.textContent = 'No tienes una sesión válida. Vuelve al inicio de sesión.';
+        return;
+      }
+
+      const nivel = await mfa.obtenerNivel();
+      if (nivel?.currentLevel === 'aal2') {
+        window.location.replace(await destinoSeguro());
+        return;
+      }
+
+      const factores = await mfa.obtenerFactores();
+      if (!factores.length) {
+        mensaje.textContent = 'No existe un autenticador verificado para esta cuenta.';
+        return;
+      }
+
+      const factorId = factores[0].id;
+      codigo.disabled = false;
+      boton.disabled = false;
+      mensaje.textContent = 'Introduce el código de tu aplicación de autenticación.';
+
+      boton.addEventListener('click', async () => {
+        boton.disabled = true;
+        try {
+          const nuevoNivel = await mfa.verificarCodigo(factorId, codigo.value.trim());
+          if (nuevoNivel?.currentLevel !== 'aal2') throw new Error('Nivel insuficiente');
+          codigo.value = '';
+          window.location.replace(await destinoSeguro());
+        } catch (_) {
+          mensaje.textContent = 'No se pudo verificar el código. Inténtalo nuevamente.';
+          boton.disabled = false;
+        }
+      });
+    } catch (_) {
+      mensaje.textContent = 'No se pudo comprobar el segundo factor. Vuelve a iniciar sesión.';
+    }
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener(
-      'DOMContentLoaded',
-      inicializarVerificacion,
-      { once: true }
-    );
+    document.addEventListener('DOMContentLoaded', () => { void inicializarVerificacion(); }, { once: true });
   } else {
-    inicializarVerificacion();
+    void inicializarVerificacion();
   }
 })();
