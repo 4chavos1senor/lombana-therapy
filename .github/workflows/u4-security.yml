@@ -1,0 +1,34 @@
+name: U4 pruebas de seguridad
+on:
+  pull_request:
+    branches:
+      - feat/autenticacion-google-mfa
+  push:
+    branches:
+      - feat/u4-security-integracion-segura
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias sin ejecutar scripts
+        run: npm ci --ignore-scripts
+      - name: Verificar sintaxis
+        run: |
+          node --check js/auth.js
+          node --check js/turnstile.js
+          node --check js/session-timeout.js
+          node --check js/mfa.js
+          node --check js/mfa-ui.js
+          node --check js/mfa-verificacion.js
+      - name: Pruebas automatizadas
+        run: npm test
