@@ -19,7 +19,18 @@ const SESION = {
 const CLAVE =
   'lombana_ultima_actividad_v2_usuario-prueba_2026-11-27T11:00:00Z';
 
-function entorno({ inactivoMs, fallaCierre = false }) {
+function claveDe(sesion) {
+  return 'lombana_ultima_actividad_v2_' +
+    sesion.user.id + '_' + sesion.user.last_sign_in_at;
+}
+
+function entorno({
+  inactivoMs,
+  fallaCierre = false,
+  sesion = SESION,
+  almacenCompartido = null,
+  ahoraInicial = AHORA
+}) {
   assert.ok(codigo.includes(habilitacion),
     'El módulo de producción debe seguir desactivado');
 
@@ -28,11 +39,15 @@ function entorno({ inactivoMs, fallaCierre = false }) {
     habilitacion, 'const TIMEOUT_ACTIVO = true;'
   );
 
-  let ahora = AHORA;
+  let ahora = ahoraInicial;
   let cierres = 0;
   let redireccion = null;
   let pantalla = null;
-  const almacen = new Map([[CLAVE, String(AHORA - inactivoMs)]]);
+  const almacen = almacenCompartido || new Map();
+  const clave = claveDe(sesion);
+  if (!almacen.has(clave)) {
+    almacen.set(clave, String(ahora - inactivoMs));
+  }
   const eventosDocumento = new Map();
   const eventosVentana = new Map();
 
@@ -68,7 +83,7 @@ function entorno({ inactivoMs, fallaCierre = false }) {
     },
     supabaseClient: {
       auth: {
-        async getSession() { return { data: { session: SESION }, error: null }; },
+        async getSession() { return { data: { session: sesion }, error: null }; },
         async signOut({ scope }) {
           assert.equal(scope, 'local');
           cierres++;
@@ -82,6 +97,7 @@ function entorno({ inactivoMs, fallaCierre = false }) {
 
   return {
     almacen,
+    clave,
     avanzar(ms) { ahora += ms; },
     evento(nombre) {
       const funcion = eventosDocumento.get(nombre);
@@ -92,6 +108,11 @@ function entorno({ inactivoMs, fallaCierre = false }) {
       const funcion = eventosVentana.get('focus');
       assert.equal(typeof funcion, 'function');
       funcion();
+    },
+    cambioAlmacen(claveModificada = clave) {
+      const funcion = eventosVentana.get('storage');
+      assert.equal(typeof funcion, 'function');
+      funcion({ key: claveModificada });
     },
     get cierres() { return cierres; },
     get redireccion() { return redireccion; },
@@ -149,4 +170,66 @@ test('Si falla signOut la pantalla queda bloqueada', async () => {
     ),
     'Debe mostrar un aviso de cierre no confirmado'
   );
+});
+
+
+test('Varias pestañas comparten actividad de la misma sesión', async () => {
+  const tab1 = entorno({ inactivoMs: 10 * 60 * 1000 });
+  const tab2 = entorno({
+    inactivoMs: 10 * 60 * 1000,
+    almacenCompartido: tab1.almacen
+  });
+  await vaciarMicrotareas();
+
+  // La primera pestaña está activa, y la segunda se comprueba más tarde.
+  tab1.evento('pointerdown');
+  tab2.avanzar(14 * 60 * 1000);
+  tab2.cambioAlmacen();
+  await vaciarMicrotareas();
+
+  assert.equal(tab1.almacen.get(tab1.clave), String(AHORA));
+  assert.equal(tab2.cierres, 0);
+  assert.equal(tab2.redireccion, null);
+});
+
+test('Cambiar de cuenta no reutiliza la actividad de otro usuario', async () => {
+  const usuarioAnterior = entorno({ inactivoMs: 16 * 60 * 1000 });
+  await vaciarMicrotareas();
+  assert.equal(usuarioAnterior.cierres, 1);
+
+  const nuevaSesion = {
+    access_token: 'token-simulado',
+    user: {
+      id: 'usuario-nuevo',
+      last_sign_in_at: '2026-11-27T11:30:00Z'
+    }
+  };
+  const nuevaCuenta = entorno({
+    inactivoMs: 60 * 1000,
+    sesion: nuevaSesion,
+    almacenCompartido: usuarioAnterior.almacen
+  });
+  await vaciarMicrotareas();
+
+  assert.notEqual(nuevaCuenta.clave, usuarioAnterior.clave);
+  assert.equal(nuevaCuenta.cierres, 0);
+  assert.equal(nuevaCuenta.redireccion, null);
+});
+
+test('Reabrir una pestaña tras 15 minutos no renueva sesión vencida', async () => {
+  const primeraApertura = entorno({ inactivoMs: 1 * 60 * 1000 });
+  await vaciarMicrotareas();
+  assert.equal(primeraApertura.cierres, 0);
+
+  const nuevaApertura = entorno({
+    inactivoMs: 1 * 60 * 1000,
+    ahoraInicial: AHORA + 16 * 60 * 1000,
+    almacenCompartido: primeraApertura.almacen
+  });
+  await vaciarMicrotareas();
+
+  assert.equal(nuevaApertura.cierres, 1);
+  assert.equal(nuevaApertura.redireccion,
+    'login.html?motivo=inactividad');
+  assert.equal(nuevaApertura.almacen.has(nuevaApertura.clave), false);
 });
