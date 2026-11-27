@@ -137,20 +137,27 @@ const { error } = respuestaLogin;
     .eq('id', user.id)
     .single();
 
-  if (!perfilError && perfil && perfil.rol === 'admin') {
-    window.location.href = 'admin.html';
-    return;
-  }
-
   const params = new URLSearchParams(window.location.search);
   const redirect = destinoLocalSeguro(params.get('redirect'));
+  const destino = !perfilError && perfil?.rol === 'admin'
+    ? 'admin.html'
+    : (redirect || 'index.html');
 
-  if (redirect) {
-    window.location.href = redirect;
-    return;
+  // El segundo factor solamente se exige si existe uno verificado.
+  const mfa = window.LombanaMFA;
+  if (mfa?.estaActivo?.()) {
+    try {
+      if (await mfa.requiereVerificacion()) {
+        window.location.href = 'verificar-2fa.html?redirect=' + encodeURIComponent(destino);
+        return;
+      }
+    } catch (_) {
+      alert('No se pudo comprobar la verificación en dos pasos. Inténtalo nuevamente.');
+      return;
+    }
   }
 
-  window.location.href = 'index.html';
+  window.location.href = destino;
 }
 async function cerrarSesion() {
   const { error } = await supabaseClient.auth.signOut();
