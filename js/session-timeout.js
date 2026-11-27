@@ -1,10 +1,12 @@
 
 /*
- * Lombana Therapy
- * Session Timeout - cierre por inactividad
+ * Lombana Therapy - Session Timeout
  *
- * Preparado para integración.
- * No activar sin pruebas.
+ * Cierre por inactividad: 15 minutos.
+ * Preparado para pruebas; NO ACTIVADO.
+ *
+ * Este módulo no sustituye los controles
+ * de autorización y expiración del servidor.
  */
 
 (() => {
@@ -13,36 +15,87 @@
   const TIMEOUT_MINUTOS = 15;
   const TIMEOUT_MS = TIMEOUT_MINUTOS * 60 * 1000;
 
-  // Mantener desactivado hasta comprobar el flujo.
+  // Mantener desactivado hasta completar pruebas.
   const TIMEOUT_ACTIVO = false;
 
-  const STORAGE_KEY = 'lombana_ultima_actividad';
+  const PREFIJO = 'lombana_ultima_actividad_v2_';
+
+  let claveSesion = null;
   let cerrandoSesion = false;
 
-  function registrarActividad() {
-    if (!cerrandoSesion) {
-      localStorage.setItem(
-        STORAGE_KEY,
-        String(Date.now())
+  function identificarSesion(sesion) {
+    // Identificador usado solo para separar contadores.
+    // No se usa como prueba de autenticación.
+    try {
+      const fragmento = sesion.access_token.split('.')[1];
+
+      const base64 = fragmento
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+      const relleno = base64.padEnd(
+        Math.ceil(base64.length / 4) * 4,
+        '='
       );
+
+      const datos = JSON.parse(atob(relleno));
+
+      if (
+        typeof datos.session_id === 'string' &&
+        datos.session_id
+      ) {
+        return datos.session_id;
+      }
+    } catch (_) {
+      // Utilizar identificación alternativa.
     }
+
+    return sesion.user.id + '_' +
+      (sesion.user.last_sign_in_at ||
+       sesion.user.created_at);
   }
 
-  async function comprobarInactividad() {
+  function ultimaActividad() {
+    const valor = localStorage.getItem(claveSesion);
+
+    if (valor === null) return null;
+
+    const numero = Number(valor);
+
+    return Number.isFinite(numero) && numero > 0
+      ? numero
+      : null;
+  }
+
+  function mostrarBloqueo(mensaje) {
+    const contenido = document.createElement('main');
+
+    contenido.setAttribute('role', 'alert');
+    contenido.style.cssText =
+      'max-width:32rem;margin:12vh auto;' +
+      'padding:1.5rem;font-family:Arial,sans-serif;';
+
+    const titulo = document.createElement('h1');
+    titulo.textContent = 'Lombana Therapy';
+
+    const parrafo = document.createElement('p');
+    parrafo.id = 'mensaje-timeout';
+    parrafo.textContent = mensaje;
+
+    contenido.append(titulo, parrafo);
+    document.body.replaceChildren(contenido);
+
+    return parrafo;
+  }
+
+  async function cerrarPorInactividad() {
     if (cerrandoSesion) return;
 
-    const ultimaActividad = Number(
-      localStorage.getItem(STORAGE_KEY)
-    );
-
-    if (!ultimaActividad) return;
-
-    const tiempoInactivo =
-      Date.now() - ultimaActividad;
-
-    if (tiempoInactivo < TIMEOUT_MS) return;
-
     cerrandoSesion = true;
+
+    const mensaje = mostrarBloqueo(
+      'Sesión inactiva. Cerrando el acceso...'
+    );
 
     try {
       const { error } =
@@ -52,17 +105,63 @@
 
       if (error) throw error;
 
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(claveSesion);
 
       window.location.replace(
         'login.html?motivo=inactividad'
       );
-    } catch (error) {
+
+    } catch (_) {
+      mensaje.textContent =
+        'No se pudo confirmar el cierre de sesión. ' +
+        'La pantalla quedó bloqueada. ' +
+        'Cuando vuelva la conexión, recarga esta ' +
+        'página para reintentarlo.';
+
       console.error(
-        'No fue posible confirmar el cierre de sesión.'
+        'No fue posible confirmar el cierre ' +
+        'de sesión por inactividad.'
       );
-      // Pendiente: bloquear la interfaz protegida
-      // y gestionar el fallo de cierre de forma segura.
+    }
+  }
+
+  function comprobarInactividad() {
+    if (cerrandoSesion || !claveSesion) return;
+
+    const momento = ultimaActividad();
+    const ahora = Date.now();
+
+    if (
+      momento === null ||
+      momento > ahora ||
+      ahora - momento >= TIMEOUT_MS
+    ) {
+      void cerrarPorInactividad();
+    }
+  }
+
+  function registrarActividad() {
+    if (cerrandoSesion || !claveSesion) return;
+
+    const momento = ultimaActividad();
+    const ahora = Date.now();
+
+    // No renovar una sesión que ya venció.
+    if (
+      momento === null ||
+      momento > ahora ||
+      ahora - momento >= TIMEOUT_MS
+    ) {
+      void cerrarPorInactividad();
+      return;
+    }
+
+    // Evitar escrituras excesivas en localStorage.
+    if (ahora - momento >= 1000) {
+      localStorage.setItem(
+        claveSesion,
+        String(ahora)
+      );
     }
   }
 
@@ -72,30 +171,42 @@
     const { data, error } =
       await supabaseClient.auth.getSession();
 
-    if (error || !data.session) return;
+    if (error) throw error;
+    if (!data?.session) return;
 
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      registrarActividad();
+    claveSesion =
+      PREFIJO + identificarSesion(data.session);
+
+    if (localStorage.getItem(claveSesion) === null) {
+      localStorage.setItem(
+        claveSesion,
+        String(Date.now())
+      );
     }
 
-    await comprobarInactividad();
+    comprobarInactividad();
 
-    const eventos = [
+    if (cerrandoSesion) return;
+
+    for (const evento of [
       'pointerdown',
       'keydown',
       'touchstart'
-    ];
-
-    eventos.forEach(evento => {
+    ]) {
       document.addEventListener(
         evento,
         registrarActividad,
         { passive: true }
       );
-    });
+    }
 
     window.addEventListener(
       'focus',
+      comprobarInactividad
+    );
+
+    window.addEventListener(
+      'pageshow',
       comprobarInactividad
     );
 
@@ -108,12 +219,25 @@
       }
     );
 
+    window.addEventListener('storage', evento => {
+      if (evento.key === claveSesion) {
+        comprobarInactividad();
+      }
+    });
+
     setInterval(comprobarInactividad, 15000);
   }
 
   inicializar().catch(() => {
-    console.error(
-      'No fue posible preparar el control de inactividad.'
-    );
+    if (TIMEOUT_ACTIVO) {
+      mostrarBloqueo(
+        'No se pudo preparar el control de sesión. ' +
+        'Recarga para reintentarlo.'
+      );
+
+      console.error(
+        'Error al iniciar el control de inactividad.'
+      );
+    }
   });
 })();
