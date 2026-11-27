@@ -1,0 +1,30 @@
+name: Comprobación de confirmación de correo
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'confirmar-correo.html'
+      - 'js/confirmar-correo.js'
+      - 'tests/confirmacion-correo.test.cjs'
+      - 'docs/CORRECCION_ENLACES_CONFIRMACION.md'
+      - '.github/workflows/confirmacion-correo.yml'
+  push:
+    branches:
+      - fix/confirmacion-correo-enlace-un-solo-uso
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: node --check js/confirmar-correo.js
+      - run: npm test
