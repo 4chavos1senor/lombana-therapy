@@ -175,7 +175,7 @@ test('Errores de conexión no se cuentan como contraseñas incorrectas', async (
     } }
   };
   vm.runInNewContext(auth, c);
-  await c.iniciarSesion({ preventDefault() {} });
+  await assert.rejects(c.iniciarSesion({ preventDefault() {} }), /Sin red/);
   assert.equal(e.api.estado(e.correo.value).restantes, 3);
 });
 
