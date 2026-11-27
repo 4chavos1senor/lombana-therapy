@@ -9,6 +9,7 @@
   function iniciarConfirmacion() {
     const boton = document.getElementById('btn-confirmar-correo');
     const estado = document.getElementById('estado-confirmacion');
+    const titulo = document.getElementById('titulo-estado-confirmacion');
     if (!boton || !estado) return;
 
     // Leer y ocultar el token de la barra de direcciones lo antes posible.
@@ -21,7 +22,8 @@
 
     if (!tokenHash || !/^[a-z0-9_-]{20,256}$/i.test(tokenHash)) {
       estado.textContent =
-        'Este enlace no es válido. Si tu cuenta no está confirmada, ' +
+        'Este enlace no es válido o ya fue utilizado. Si anteriormente ' +
+        'confirmaste tu correo, puedes iniciar sesión. De lo contrario, ' +
         'solicita un correo nuevo.';
       boton.disabled = true;
       return;
@@ -45,15 +47,17 @@
         });
 
         if (error) throw error;
+        if (titulo) titulo.textContent = '¡Cuenta ya verificada!';
         estado.textContent =
           'Tu correo quedó confirmado correctamente. ' +
-          'Ya puedes continuar en Lombana Therapy.';
+          'Ya puedes iniciar sesión en Lombana Therapy.';
         boton.hidden = true;
       } catch (_) {
+        if (titulo) titulo.textContent = 'Revisa la confirmación de tu cuenta';
         estado.textContent =
-          'No se pudo confirmar el correo. El enlace puede haber ' +
-          'caducado o haber sido utilizado. Si todavía no puedes ' +
-          'iniciar sesión, solicita otro enlace de confirmación.';
+          'Este enlace ya fue utilizado o caducó. Si ya confirmaste ' +
+          'tu correo, tu cuenta está lista para iniciar sesión. ' +
+          'Si aún no está confirmada, solicita otro enlace de confirmación.';
         boton.hidden = true;
       }
     });
