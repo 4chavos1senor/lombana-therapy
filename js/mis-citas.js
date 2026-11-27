@@ -18,6 +18,18 @@ async function cargarMisCitas() {
 
   const user = sessionData.session.user;
 
+  if (window.LombanaMFA?.estaActivo?.()) {
+    try {
+      if (await window.LombanaMFA.requiereVerificacion()) {
+        window.location.replace('verificar-2fa.html?redirect=mis-citas.html');
+        return;
+      }
+    } catch (_) {
+      contenedor.textContent = 'No se pudo verificar tu identidad. Inténtalo nuevamente.';
+      return;
+    }
+  }
+
   const { data: citas, error } = await supabaseClient
     .from('appointments')
     .select(`
