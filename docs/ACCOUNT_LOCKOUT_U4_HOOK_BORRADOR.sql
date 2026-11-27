@@ -1,8 +1,10 @@
--- BORRADOR U4 — NO EJECUTAR EN PRODUCCION SIN REVISION.
--- Requiere Supabase Teams/Enterprise: Auth > Hooks > Password Verification Attempt.
--- 5 intentos fallidos -> bloqueo temporal de 15 minutos.
--- El hook recibe user_id y valid desde Supabase, NUNCA contraseñas.
--- Revisar y ensayar primero en un proyecto de pruebas autorizado.
+-- BORRADOR EDUCATIVO — NO EJECUTAR EN PRODUCCION.
+-- Supabase Password Verification Attempt Hook: disponible en Teams y Enterprise.
+-- Regla solicitada: 3 fallos -> 1 minuto; otros 3 fallos -> 2 minutos.
+-- IMPORTANTE: bloquear una cuenta por fallos de cualquiera permite ataques DoS.
+-- No desplegar antes de revisión antiabuso y pruebas en proyecto de desarrollo.
+-- No modifica ninguna cuenta hasta que un operador lo instale y active.
+
 create schema if not exists lt_auth_security;
 revoke all on schema lt_auth_security from public, anon, authenticated;
 grant usage on schema lt_auth_security to supabase_auth_admin;
@@ -10,6 +12,7 @@ grant usage on schema lt_auth_security to supabase_auth_admin;
 create table if not exists lt_auth_security.password_lockouts (
   user_id uuid primary key,
   failed_count integer not null default 0 check (failed_count >= 0),
+  block_count integer not null default 0 check (block_count >= 0),
   first_failed_at timestamptz not null default now(),
   locked_until timestamptz
 );
@@ -17,7 +20,9 @@ alter table lt_auth_security.password_lockouts enable row level security;
 revoke all on lt_auth_security.password_lockouts from public, anon, authenticated;
 grant select, insert, update, delete on lt_auth_security.password_lockouts to supabase_auth_admin;
 
-create policy "Solo hook de autenticacion" on lt_auth_security.password_lockouts
+-- Borrador de primera instalación: no reejecutar sin auditar políticas.
+create policy "Solo hook de autenticacion"
+  on lt_auth_security.password_lockouts
   for all to supabase_auth_admin using (true) with check (true);
 
 create or replace function lt_auth_security.password_verification_attempt(event jsonb)
@@ -28,8 +33,10 @@ declare
   v_valid boolean;
   v_now timestamptz := pg_catalog.clock_timestamp();
   v_count integer;
+  v_block_count integer;
   v_first timestamptz;
   v_until timestamptz;
+  v_lock_minutes integer;
 begin
   v_user := (event->>'user_id')::uuid;
   v_valid := (event->>'valid')::boolean;
@@ -37,18 +44,18 @@ begin
     return pg_catalog.jsonb_build_object('decision', 'continue');
   end if;
 
-  -- Serializar intentos del mismo usuario contra solicitudes paralelas.
+  -- No permite solicitudes paralelas que evadan el contador.
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext(v_user::text)::bigint);
 
-  select failed_count, first_failed_at, locked_until
-    into v_count, v_first, v_until
+  select failed_count, block_count, first_failed_at, locked_until
+    into v_count, v_block_count, v_first, v_until
     from lt_auth_security.password_lockouts
    where user_id = v_user for update;
 
   if v_until is not null and v_until > v_now then
     return pg_catalog.jsonb_build_object(
       'decision', 'reject',
-      'message', 'No fue posible iniciar sesion. Intenta mas tarde.',
+      'message', 'Acceso temporalmente suspendido. Intenta mas tarde.',
       'should_logout_user', false);
   end if;
 
@@ -57,32 +64,40 @@ begin
     return pg_catalog.jsonb_build_object('decision', 'continue');
   end if;
 
-  if v_first is null or v_first < v_now - interval '15 minutes'
-     or v_until is not null then
+  v_block_count := pg_catalog.coalesce(v_block_count, 0);
+  if v_first is null or v_first < v_now - interval '24 hours' then
+    v_block_count := 0;
+    v_first := v_now;
+    v_count := 1;
+  elsif v_until is not null then
     v_first := v_now;
     v_count := 1;
   else
     v_count := v_count + 1;
   end if;
 
-  if v_count >= 5 then
-    v_until := v_now + interval '15 minutes';
+  if v_count >= 3 then
+    v_lock_minutes := case when v_block_count = 0 then 1 else 2 end;
+    v_until := v_now + pg_catalog.make_interval(mins => v_lock_minutes);
+    v_block_count := v_block_count + 1;
+    v_count := 0;
   else
     v_until := null;
   end if;
 
   insert into lt_auth_security.password_lockouts
-    (user_id, failed_count, first_failed_at, locked_until)
-  values (v_user, v_count, v_first, v_until)
+    (user_id, failed_count, block_count, first_failed_at, locked_until)
+  values (v_user, v_count, v_block_count, v_first, v_until)
   on conflict (user_id) do update
     set failed_count = excluded.failed_count,
+        block_count = excluded.block_count,
         first_failed_at = excluded.first_failed_at,
         locked_until = excluded.locked_until;
 
   if v_until is not null then
     return pg_catalog.jsonb_build_object(
       'decision', 'reject',
-      'message', 'No fue posible iniciar sesion. Intenta mas tarde.',
+      'message', 'Demasiados intentos incorrectos. Acceso suspendido.',
       'should_logout_user', false);
   end if;
 
@@ -95,9 +110,6 @@ revoke all on function lt_auth_security.password_verification_attempt(jsonb)
 grant execute on function lt_auth_security.password_verification_attempt(jsonb)
   to supabase_auth_admin;
 
--- Al preparar la instalación real:
--- 1) revisar si el esquema/función/política existen (reaplicar POLICY requiere DROP controlado).
--- 2) configurar el hook SQL en Authentication > Hooks en Teams/Enterprise.
--- 3) probar 4 fallos, 5o fallo, contraseña correcta durante bloqueo,
---    expiración tras 15 minutos, concurrencia y recuperación autorizada.
--- 4) observar protección anti-DoS: un atacante puede bloquear cuentas conocidas.
+-- Pendiente: pruebas del hook con cuentas propias de desarrollo y auditoría
+-- contra denegación de servicio, revocación, concurrencia y recuperación.
+-- Los avisos por correo sobre bloqueo NO están implementados.
