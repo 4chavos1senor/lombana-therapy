@@ -124,3 +124,40 @@ test('Registro con token envia captchaToken y conserva metadatos', async () => {
 function lamadasOpciones(credenciales) {
   return Object.hasOwn(credenciales, 'options');
 }
+test('Google OAuth no depende de las variables de CAPTCHA', async () => {
+  const { contexto, llamadas } = prepararEscenario({ captchaActivo: true, token: 'token-simulado' });
+  const oauth = [];
+  contexto.supabaseClient.auth.signInWithOAuth = async opciones => {
+    oauth.push(opciones);
+    return { error: null };
+  };
+  await contexto.iniciarSesionConGoogle();
+  assert.equal(oauth.length, 1);
+  assert.equal(oauth[0].provider, 'google');
+  assert.equal(llamadas.reinicios, 0);
+  assert.equal(llamadas.avisos.length, 0);
+});
+
+test('Registro reinicia CAPTCHA si Supabase lanza una excepción', async () => {
+  const { contexto, llamadas, evento } = prepararEscenario({ captchaActivo: true, token: 'token-simulado' });
+  contexto.supabaseClient.auth.signUp = async () => { throw new Error('Sin conexión simulada'); };
+  await assert.rejects(contexto.registrarUsuario(evento()), /Sin conexión simulada/);
+  assert.equal(llamadas.reinicios, 1);
+});
+
+test('Login reinicia CAPTCHA si Supabase lanza una excepción', async () => {
+  const { contexto, llamadas, evento } = prepararEscenario({ captchaActivo: true, token: 'token-simulado' });
+  contexto.supabaseClient.auth.signInWithPassword = async () => { throw new Error('Sin conexión simulada'); };
+  await assert.rejects(contexto.iniciarSesion(evento()), /Sin conexión simulada/);
+  assert.equal(llamadas.reinicios, 1);
+});
+
+test('El CAPTCHA del login está dentro del formulario y antes del botón', () => {
+  const html = fs.readFileSync(path.resolve(__dirname, '..', 'login.html'), 'utf8');
+  const form = html.indexOf('onsubmit="iniciarSesion(event)"');
+  const campo = html.indexOf('id="contenedor-captcha"');
+  const boton = html.indexOf('type="submit" class="btn-primary"');
+  assert.ok(form >= 0 && form < campo && campo < boton);
+  const antes = html.slice(form, campo);
+  assert.ok(antes.lastIndexOf('<p') <= antes.lastIndexOf('</p>'));
+});

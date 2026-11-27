@@ -238,6 +238,10 @@
         <label for="password">Contraseña</label>
         <input type="password" id="password" autocomplete="current-password" required>
 
+        <!-- Protección CAPTCHA del inicio de sesión -->
+        <div id="contenedor-captcha" hidden></div>
+        <p id="mensaje-captcha" role="status" aria-live="polite" hidden></p>
+
         <button type="submit" class="btn-primary">Entrar</button>
 
 <p class="form-link">O inicia sesión con:</p>
@@ -264,19 +268,6 @@
 
         <p class="form-link">
           ¿Eres terapeuta?
-
-<!-- Protección CAPTCHA de Lombana Therapy -->
-<div
-  id="contenedor-captcha"
-  hidden
-></div>
-
-<p
-  id="mensaje-captcha"
-  role="status"
-  aria-live="polite"
-  hidden
-></p>
 
           <a href="admin.html">Entrar al panel</a>
         </p>
