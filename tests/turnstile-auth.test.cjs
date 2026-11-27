@@ -99,7 +99,7 @@ test('Registro sin CAPTCHA conserva metadatos y redireccion', async () => {
   assert.equal(parametros.options.data.nombre, 'Paciente Prueba');
   assert.equal(parametros.options.data.telefono, '5555555555');
   assert.equal(parametros.options.data.genero, 'otro');
-  assert.equal(parametros.options.emailRedirectTo, 'https://ejemplo.test/login.html');
+  assert.equal(parametros.options.emailRedirectTo, 'https://4chavos1senor.github.io/lombana-therapy/login.html');
   assert.equal(Object.hasOwn(parametros.options, 'captchaToken'), false);
 });
 
@@ -117,7 +117,7 @@ test('Registro con token envia captchaToken y conserva metadatos', async () => {
   const parametros = llamadas.registro[0];
   assert.equal(parametros.options.captchaToken, 'token-registro');
   assert.equal(parametros.options.data.nombre, 'Paciente Prueba');
-  assert.equal(parametros.options.emailRedirectTo, 'https://ejemplo.test/login.html');
+  assert.equal(parametros.options.emailRedirectTo, 'https://4chavos1senor.github.io/lombana-therapy/login.html');
   assert.equal(llamadas.reinicios, 1);
 });
 

@@ -43,7 +43,8 @@ async function registrarUsuario(event) {
           genero: genero
           // Rol administrativo nunca se toma desde metadatos del cliente.
         },
-        emailRedirectTo: new URL('login.html', window.location.href).href,
+        // Evita redirecciones a 127.0.0.1 al abrir el correo desde un teléfono.
+        emailRedirectTo: 'https://4chavos1senor.github.io/lombana-therapy/login.html',
         ...(captchaActivo ? { captchaToken } : {})
       }
     });

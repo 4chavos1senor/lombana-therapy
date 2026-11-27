@@ -24,6 +24,7 @@ function crearContexto({ tokenHash = token, falla = false } = {}) {
     }
   };
   const estado = { textContent: '' };
+  const titulo = { textContent: 'Confirma tu correo electrónico' };
   const window = {
     location: {
       search: tokenHash === null ? '' : '?token_hash=' + tokenHash,
@@ -40,6 +41,7 @@ function crearContexto({ tokenHash = token, falla = false } = {}) {
     getElementById(id) {
       if (id === 'btn-confirmar-correo') return boton;
       if (id === 'estado-confirmacion') return estado;
+      if (id === 'titulo-estado-confirmacion') return titulo;
       return null;
     }
   };
@@ -54,7 +56,7 @@ function crearContexto({ tokenHash = token, falla = false } = {}) {
   vm.runInNewContext(source, {
     document, window, URLSearchParams, supabaseClient
   }, { filename: 'js/confirmar-correo.js' });
-  return { boton, estado, llamadas, datos, window };
+  return { boton, estado, titulo, llamadas, datos, window };
 }
 
 test('Abrir o previsualizar un enlace no consume el token', () => {
@@ -78,6 +80,7 @@ test('Un clic explícito verifica el token_hash con type email', async () => {
   assert.equal(e.llamadas[0].token_hash, token);
   assert.equal(e.llamadas[0].type, 'email');
   assert.match(e.estado.textContent, /correo quedó confirmado/);
+  assert.match(e.titulo.textContent, /Cuenta ya verificada/);
   assert.equal(e.boton.hidden, true);
 });
 
@@ -105,11 +108,14 @@ test('Token caducado informa cómo solicitar otro enlace', async () => {
   const e = crearContexto({ falla: true });
   await e.boton.click();
   assert.match(e.estado.textContent, /solicita otro enlace/);
+  assert.match(e.estado.textContent, /Si ya confirmaste tu correo/);
+  assert.doesNotMatch(e.titulo.textContent, /^¡Cuenta ya verificada!$/);
   assert.equal(e.boton.hidden, true);
 });
 
 test('HTML carga el SDK y verifica solo con interacción del usuario', () => {
   assert.match(html, /id="btn-confirmar-correo"/);
+  assert.match(html, /id="titulo-estado-confirmacion"/);
   assert.match(html, /type="button"/);
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /name="referrer" content="no-referrer"/);
@@ -131,4 +137,23 @@ test('El acceso Google OAuth original no se ha sustituido', () => {
   assert.match(auth, /provider: 'google'/);
   assert.match(auth, /signInWithPassword/);
   assert.match(auth, /auth\.signUp/);
+});
+
+test('Las confirmaciones usan el sitio público y no localhost del navegador', () => {
+  const auth = fs.readFileSync(path.join(root, 'js/auth.js'), 'utf8');
+  const resend = fs.readFileSync(path.join(root, 'reenviar-confirmacion.html'), 'utf8');
+  const expected = 'https://4chavos1senor.github.io/lombana-therapy/login.html';
+  assert.match(auth, /emailRedirectTo:/);
+  assert.ok(auth.includes(expected));
+  assert.ok(resend.includes(expected));
+  assert.doesNotMatch(auth, /emailRedirectTo: new URL\('login.html', window.location.href\)/);
+  assert.doesNotMatch(resend, /emailRedirectTo: new URL\(/);
+});
+
+test('No se afirma que un token usado o inválido confirme la cuenta', async () => {
+  const invalido = crearContexto({ tokenHash: null });
+  assert.doesNotMatch(invalido.estado.textContent, /^Cuenta ya verificada/);
+  const vencido = crearContexto({ falla: true });
+  await vencido.boton.click();
+  assert.doesNotMatch(vencido.titulo.textContent, /^¡Cuenta ya verificada!$/);
 });
